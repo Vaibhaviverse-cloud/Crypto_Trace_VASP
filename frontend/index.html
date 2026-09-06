@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CryptoTrace VASP — Wallet Attribution</title>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #060812;
+    --grid-line: rgba(255, 61, 138, 0.035);
+    --panel: #0D0F1C;
+    --panel-raised: #131629;
+    --border: #211F3A;
+    --border-bright: #362F5C;
+    --text: #DCE0F2;
+    --text-dim: #5F6285;
+    --accent: #43E6C4;
+    --accent-glow: rgba(67, 230, 196, 0.35);
+    --pink: #FF3D8A;
+    --pink-glow: rgba(255, 61, 138, 0.4);
+    --flag: #F0A857;
+    --flag-glow: rgba(240, 168, 87, 0.25);
+    --mono: 'JetBrains Mono', Consolas, monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -5%, rgba(255,61,138,0.10), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 90% 10%, rgba(67,230,196,0.08), transparent 60%),
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      var(--bg);
+    background-size: auto, auto, 28px 28px, 28px 28px, auto;
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(180deg, rgba(6,8,18,0.9), rgba(6,8,18,0.6));
+    backdrop-filter: blur(6px);
+  }
+
+  .scope-icon { width: 22px; height: 22px; flex-shrink: 0; }
+  .scope-icon .ring { fill: none; stroke: var(--border-bright); stroke-width: 1; }
+  .scope-icon .tick { stroke: var(--text-dim); stroke-width: 1; }
+  .scope-icon .sweep { transform-origin: 11px 11px; animation: sweep 3.2s linear infinite; }
+  .scope-icon .crosshair { fill: var(--accent); }
+  @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.02em;
+    background: linear-gradient(90deg, var(--accent) 0%, #7FE6D8 35%, var(--pink) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  header .tag {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    border-left: 1px solid var(--border);
+    padding-left: 14px;
+  }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 36px 32px; }
+
+  .search-label {
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    margin-bottom: 8px; letter-spacing: 0.03em;
+  }
+
+  .search-row { display: flex; gap: 10px; margin-bottom: 8px; }
+
+  #addressInput {
+    flex: 1; background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 13px 16px; border-radius: 3px; font-family: var(--mono); font-size: 13px;
+    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #addressInput:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-glow); }
+  #addressInput::placeholder { color: var(--text-dim); }
+  #addressInput.invalid { border-color: #E15C5C; }
+
+  .input-error {
+    font-family: var(--mono); font-size: 11px; color: #E15C5C;
+    margin-bottom: 24px; min-height: 14px;
+  }
+
+  button {
+    position: relative; background: transparent; color: var(--accent);
+    border: 1px solid var(--accent); padding: 13px 28px; font-weight: 700;
+    font-size: 12.5px; font-family: var(--mono); letter-spacing: 0.08em; cursor: pointer;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    overflow: hidden; transition: color 0.2s, border-color 0.2s; isolation: isolate;
+  }
+  button::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(120deg, var(--accent) 0%, var(--pink) 100%);
+    transform: translateX(-105%); transition: transform 0.28s ease; z-index: -1;
+  }
+  button:hover { color: #04140F; border-color: var(--pink); }
+  button:hover::before { transform: translateX(0); }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: default; border-color: var(--border-bright); color: var(--text-dim); }
+  button:disabled::before { display: none; }
+
+  .btn-arrow { display: inline-block; transition: transform 0.2s; }
+  button:hover .btn-arrow { transform: translateX(3px); }
+
+  .btn-secondary {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border-bright);
+    padding: 8px 16px; font-size: 11px; clip-path: none; font-weight: 600;
+  }
+  .btn-secondary::before { display: none; }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text-dim); }
+
+  .empty-state {
+    border: 1px dashed var(--border); border-radius: 4px; padding: 60px 24px;
+    text-align: center; color: var(--text-dim); font-size: 13px; font-family: var(--mono);
+  }
+
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: 4px;
+    overflow: hidden; margin-bottom: 12px; position: relative;
+  }
+  .summary-grid::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--pink));
+  }
+
+  .stat { background: var(--panel); padding: 18px 20px; position: relative; }
+  .stat .label {
+    font-size: 10.5px; color: var(--text-dim); margin-bottom: 8px;
+    font-family: var(--mono); letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .stat .value { font-size: 21px; font-weight: 700; font-family: var(--mono); }
+  .stat .value.accent { color: var(--accent); text-shadow: 0 0 16px var(--accent-glow); }
+  .stat .value.pink { color: var(--pink); text-shadow: 0 0 16px var(--pink-glow); }
+  .stat .value.muted { color: var(--text-dim); font-size: 15px; font-weight: 500; }
+
+  .confidence-bar { height: 3px; background: var(--panel-raised); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .confidence-fill { height: 100%; background: linear-gradient(90deg, var(--pink), var(--accent)); box-shadow: 0 0 8px var(--accent-glow); }
+
+  .hop-note {
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    margin-bottom: 16px; padding: 0 2px;
+  }
+  .hop-note span { color: var(--pink); }
+
+  .flag-row {
+    display: flex; align-items: center; gap: 10px; background: var(--panel);
+    border: 1px solid var(--flag); box-shadow: 0 0 20px -8px var(--flag-glow); color: var(--flag);
+    padding: 12px 16px; border-radius: 4px; font-size: 12px; margin-bottom: 20px; font-family: var(--mono);
+  }
+  .flag-icon {
+    width: 16px; height: 16px; border: 1px solid var(--flag); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0;
+  }
+
+  .panel-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .panel-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--mono); }
+  .panel-meta { font-size: 10.5px; color: var(--text-dim); font-family: var(--mono); }
+
+  #graph {
+    background: radial-gradient(circle at 25% 15%, rgba(67,230,196,0.05), transparent 40%),
+                radial-gradient(circle at 80% 85%, rgba(255,61,138,0.05), transparent 40%), var(--panel);
+    border: 1px solid var(--border); border-radius: 4px; height: 420px;
+  }
+
+  .legend {
+    display: flex; gap: 20px; margin-top: 10px; font-family: var(--mono);
+    font-size: 10.5px; color: var(--text-dim); flex-wrap: wrap;
+  }
+  .legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+
+  .footer-row {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 14px;
+  }
+  .footer-note { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
+
+  .loading { color: var(--pink); font-size: 13px; padding: 24px 0; font-family: var(--mono); }
+  .loading::after { content: '▍'; animation: blink 0.9s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="scope-icon" viewBox="0 0 22 22">
+    <circle class="ring" cx="11" cy="11" r="9.5"/>
+    <circle class="ring" cx="11" cy="11" r="5.5" opacity="0.6"/>
+    <line class="tick" x1="11" y1="1" x2="11" y2="3"/>
+    <line class="tick" x1="11" y1="19" x2="11" y2="21"/>
+    <line class="tick" x1="1" y1="11" x2="3" y2="11"/>
+    <line class="tick" x1="19" y1="11" x2="21" y2="11"/>
+    <g class="sweep">
+      <path d="M 11 11 L 11 1.5 A 9.5 9.5 0 0 1 18.7 5.3 Z" fill="url(#sweepGrad)" opacity="0.55"/>
+    </g>
+    <circle class="crosshair" cx="11" cy="11" r="1.6"/>
+    <defs>
+      <linearGradient id="sweepGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#43E6C4"/>
+        <stop offset="100%" stop-color="#43E6C4" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <h1>CRYPTOTRACE // VASP-ATTRIBUTION</h1>
+  <span class="tag">SIH26182 · blockchain intelligence prototype</span>
+</header>
+
+<main>
+  <div class="search-label">$ trace --address</div>
+  <div class="search-row">
+    <input id="addressInput" type="text" placeholder="0x..."
+      value="0x00b9EEfDBCc68c055959E69E21c845496d740691">
+    <button id="searchBtn" onclick="lookup()">RUN TRACE <span class="btn-arrow">→</span></button>
+  </div>
+  <div class="input-error" id="inputError"></div>
+
+  <div id="output">
+    <div class="empty-state">// awaiting input — enter a wallet address and run trace</div>
+  </div>
+</main>
+
+<script>
+  let sweepIntervalId = null;
+  let lastResult = null;
+
+  function isValidAddress(addr) {
+    return /^0x[a-fA-F0-9]{40}$/.test(addr);
+  }
+
+  async function lookup() {
+    const address = document.getElementById('addressInput').value.trim();
+    const btn = document.getElementById('searchBtn');
+    const output = document.getElementById('output');
+    const input = document.getElementById('addressInput');
+    const errorEl = document.getElementById('inputError');
+
+    errorEl.textContent = '';
+    input.classList.remove('invalid');
+
+    if (!address) return;
+
+    if (!isValidAddress(address)) {
+      errorEl.textContent = '// invalid format — expected a 42-character 0x address';
+      input.classList.add('invalid');
+      return;
+    }
+
+    btn.disabled = true;
+    output.innerHTML = '<div class="loading">tracing on-chain activity</div>';
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/attribute?address=${address}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      lastResult = data;
+      renderResult(data);
+    } catch (err) {
+      output.innerHTML = `<div class="empty-state">// error — could not reach backend: ${err.message}</div>`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderResult(data) {
+    const output = document.getElementById('output');
+    const conf = data.confidence || 0;
+    const flags = data.flags || [];
+
+    let html = `
+      <div class="summary-grid">
+        <div class="stat">
+          <div class="label">Transactions</div>
+          <div class="value">${data.tx_count}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Matched VASP</div>
+          <div class="value ${data.matched_vasp ? 'pink' : 'muted'}">${data.matched_vasp || 'NO MATCH'}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Confidence</div>
+          <div class="value ${conf > 0 ? 'accent' : 'muted'}">${conf}%</div>
+          <div class="confidence-bar"><div class="confidence-fill" style="width:${conf}%"></div></div>
+        </div>
+        <div class="stat">
+          <div class="label">Target address</div>
+          <div class="value muted" style="font-size:11.5px;">${data.address.slice(0,10)}…${data.address.slice(-6)}</div>
+        </div>
+      </div>
+    `;
+
+    if (data.matched_vasp && data.hops === 1 && data.matched_via) {
+      html += `<div class="hop-note">// matched via <span>1 hop</span> through ${data.matched_via.slice(0,10)}…${data.matched_via.slice(-6)}</div>`;
+    } else if (data.matched_vasp && data.hops === 0) {
+      html += `<div class="hop-note">// <span>direct</span> transaction with matched VASP</div>`;
+    }
+
+    if (flags.length > 0) {
+      html += `<div class="flag-row"><span class="flag-icon">!</span> FLAGGED — ${flags.join(', ').replace(/_/g,' ').toUpperCase()}</div>`;
+    }
+
+    html += `
+      <div class="panel-header">
+        <span class="panel-title">Transaction graph</span>
+        <span class="panel-meta">showing ${Math.min(data.transactions.length,10)} of ${data.tx_count} nodes</span>
+      </div>
+      <div id="graph"></div>
+      <div class="legend">
+        <span><span class="dot" style="background:#43E6C4;"></span>Searched address</span>
+        <span><span class="dot" style="background:#FF3D8A;"></span>Matched VASP</span>
+        <span><span class="dot" style="background:#5F6285;"></span>Other wallet</span>
+      </div>
+      <div class="footer-row">
+        <div class="footer-note">// data source: etherscan.io — prototype uses free-tier API</div>
+        <button class="btn-secondary" onclick="exportReport()">↓ EXPORT JSON</button>
+      </div>
+    `;
+
+    output.innerHTML = html;
+    renderGraph(data);
+  }
+
+  function exportReport() {
+    if (!lastResult) return;
+    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `attribution-report-${lastResult.address.slice(0,8)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function renderGraph(data) {
+    if (sweepIntervalId) clearInterval(sweepIntervalId);
+
+    const nodes = [{
+      id: data.address, label: data.address.slice(0,6)+'…',
+      color: { background: '#43E6C4', border: '#1F7A68' },
+      font: { color: '#04140F', face: 'JetBrains Mono', size: 11 }, shape: 'dot', size: 24
+    }];
+    const edges = [];
+
+    data.transactions.forEach((tx, i) => {
+      const other = tx.to.toLowerCase() === data.address.toLowerCase() ? tx.from : tx.to;
+      const isMatched = data.matched_vasp && other.toLowerCase() === tx.to.toLowerCase() && tx.to.toLowerCase() !== data.address.toLowerCase();
+      nodes.push({
+        id: other + i, label: other.slice(0,6)+'…',
+        color: isMatched ? { background: '#2A1122', border: '#FF3D8A' } : { background: '#131629', border: '#362F5C' },
+        font: { color: isMatched ? '#FF3D8A' : '#DCE0F2', face: 'JetBrains Mono', size: 10 },
+        shape: 'dot', size: isMatched ? 18 : 14
+      });
+      edges.push({
+        from: data.address, to: other + i,
+        color: { color: isMatched ? '#FF3D8A' : '#2E4463', highlight: '#FF3D8A' },
+        width: isMatched ? 1.6 : 1
+      });
+    });
+
+    const container = document.getElementById('graph');
+    const network = new vis.Network(container, { nodes, edges }, {
+      physics: { stabilization: true, barnesHut: { springLength: 130 } },
+      interaction: { hover: true }
+    });
+
+    let sweepAngle = 0;
+    network.on('afterDrawing', function (ctx) {
+      const pos = network.getPositions([data.address])[data.address];
+      if (!pos) return;
+      const ringRadius = 38;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(67,230,196,0.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      const grad = ctx.createLinearGradient(pos.x, pos.y, pos.x + ringRadius, pos.y);
+      grad.addColorStop(0, 'rgba(67,230,196,0.9)');
+      grad.addColorStop(1, 'rgba(67,230,196,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, ringRadius, sweepAngle, sweepAngle + 0.6);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    sweepIntervalId = setInterval(() => { sweepAngle += 0.035; network.redraw(); }, 30);
+  }
+</script>
+</body>
+</html>
