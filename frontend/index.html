@@ -7,22 +7,30 @@
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
   :root {
     --bg: #060812;
     --grid-line: rgba(255, 61, 138, 0.035);
+
     --panel: #0D0F1C;
     --panel-raised: #131629;
+
     --border: #211F3A;
     --border-bright: #362F5C;
+
     --text: #DCE0F2;
     --text-dim: #5F6285;
+
     --accent: #43E6C4;
     --accent-glow: rgba(67, 230, 196, 0.35);
+
     --pink: #FF3D8A;
     --pink-glow: rgba(255, 61, 138, 0.4);
+
     --flag: #F0A857;
     --flag-glow: rgba(240, 168, 87, 0.25);
+
     --mono: 'JetBrains Mono', Consolas, monospace;
     --sans: 'Inter', -apple-system, sans-serif;
   }
@@ -37,23 +45,16 @@
     background:
       radial-gradient(
         ellipse 900px 500px at 15% -5%,
-        rgba(255,61,138,0.10),
+        rgba(255, 61, 138, 0.10),
         transparent 60%
       ),
       radial-gradient(
         ellipse 900px 500px at 90% 10%,
-        rgba(67,230,196,0.08),
+        rgba(67, 230, 196, 0.08),
         transparent 60%
       ),
-      linear-gradient(
-        var(--grid-line) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        var(--grid-line) 1px,
-        transparent 1px
-      ),
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
       var(--bg);
 
     background-size:
@@ -68,30 +69,23 @@
     min-height: 100vh;
   }
 
-
-  /* =========================
-     HEADER
-     ========================= */
-
   header {
     border-bottom: 1px solid var(--border);
     padding: 18px 32px;
 
     display: flex;
     align-items: center;
-
     gap: 14px;
 
     background:
       linear-gradient(
         180deg,
-        rgba(6,8,18,0.9),
-        rgba(6,8,18,0.6)
+        rgba(6, 8, 18, 0.9),
+        rgba(6, 8, 18, 0.6)
       );
 
     backdrop-filter: blur(6px);
   }
-
 
   .scope-icon {
     width: 22px;
@@ -129,14 +123,12 @@
     }
   }
 
-
   header h1 {
     font-family: var(--mono);
     font-size: 15px;
     font-weight: 700;
 
     margin: 0;
-
     letter-spacing: 0.02em;
 
     background:
@@ -149,26 +141,17 @@
 
     -webkit-background-clip: text;
     background-clip: text;
-
     color: transparent;
   }
-
 
   header .tag {
     font-size: 11.5px;
     color: var(--text-dim);
-
     font-family: var(--mono);
 
     border-left: 1px solid var(--border);
-
     padding-left: 14px;
   }
-
-
-  /* =========================
-     MAIN
-     ========================= */
 
   main {
     max-width: 1120px;
@@ -176,17 +159,14 @@
     padding: 36px 32px;
   }
 
-
   .search-label {
     font-family: var(--mono);
     font-size: 11px;
     color: var(--text-dim);
 
     margin-bottom: 8px;
-
     letter-spacing: 0.03em;
   }
-
 
   .search-row {
     display: flex;
@@ -194,22 +174,18 @@
     margin-bottom: 8px;
   }
 
-
   #addressInput {
     flex: 1;
 
     background: var(--panel);
-
     border: 1px solid var(--border);
 
     color: var(--text);
 
     padding: 13px 16px;
-
     border-radius: 3px;
 
     font-family: var(--mono);
-
     font-size: 13px;
 
     outline: none;
@@ -219,47 +195,32 @@
       box-shadow 0.15s;
   }
 
-
   #addressInput:focus {
     border-color: var(--pink);
-
-    box-shadow:
-      0 0 0 3px var(--pink-glow);
+    box-shadow: 0 0 0 3px var(--pink-glow);
   }
-
 
   #addressInput::placeholder {
     color: var(--text-dim);
   }
 
-
   #addressInput.invalid {
     border-color: #E15C5C;
   }
 
-
   .input-error {
     font-family: var(--mono);
-
     font-size: 11px;
-
     color: #E15C5C;
 
     margin-bottom: 24px;
-
     min-height: 14px;
   }
-
-
-  /* =========================
-     BUTTONS
-     ========================= */
 
   button {
     position: relative;
 
     background: transparent;
-
     color: var(--accent);
 
     border: 1px solid var(--accent);
@@ -267,11 +228,9 @@
     padding: 13px 28px;
 
     font-weight: 700;
-
     font-size: 12.5px;
 
     font-family: var(--mono);
-
     letter-spacing: 0.08em;
 
     cursor: pointer;
@@ -287,20 +246,14 @@
       );
 
     overflow: hidden;
-
-    transition:
-      color 0.2s,
-      border-color 0.2s;
-
+    transition: color 0.2s, border-color 0.2s;
     isolation: isolate;
   }
-
 
   button::before {
     content: '';
 
     position: absolute;
-
     inset: 0;
 
     background:
@@ -311,61 +264,47 @@
       );
 
     transform: translateX(-105%);
-
-    transition:
-      transform 0.28s ease;
+    transition: transform 0.28s ease;
 
     z-index: -1;
   }
-
 
   button:hover {
     color: #04140F;
     border-color: var(--pink);
   }
 
-
   button:hover::before {
     transform: translateX(0);
   }
 
-
   button:active {
     transform: scale(0.97);
   }
-
 
   button:disabled {
     opacity: 0.4;
     cursor: default;
 
     border-color: var(--border-bright);
-
     color: var(--text-dim);
   }
-
 
   button:disabled::before {
     display: none;
   }
 
-
   .btn-arrow {
     display: inline-block;
-
-    transition:
-      transform 0.2s;
+    transition: transform 0.2s;
   }
-
 
   button:hover .btn-arrow {
     transform: translateX(3px);
   }
 
-
   .btn-secondary {
     background: transparent;
-
     color: var(--text-dim);
 
     border: 1px solid var(--border-bright);
@@ -375,30 +314,20 @@
     font-size: 11px;
 
     clip-path: none;
-
     font-weight: 600;
   }
-
 
   .btn-secondary::before {
     display: none;
   }
 
-
   .btn-secondary:hover {
     color: var(--text);
-
     border-color: var(--text-dim);
   }
 
-
-  /* =========================
-     EMPTY STATE
-     ========================= */
-
   .empty-state {
     border: 1px dashed var(--border);
-
     border-radius: 4px;
 
     padding: 60px 24px;
@@ -408,14 +337,8 @@
     color: var(--text-dim);
 
     font-size: 13px;
-
     font-family: var(--mono);
   }
-
-
-  /* =========================
-     SUMMARY
-     ========================= */
 
   .summary-grid {
     display: grid;
@@ -428,7 +351,6 @@
     background: var(--border);
 
     border: 1px solid var(--border);
-
     border-radius: 4px;
 
     overflow: hidden;
@@ -437,7 +359,6 @@
 
     position: relative;
   }
-
 
   .summary-grid::before {
     content: '';
@@ -458,7 +379,6 @@
       );
   }
 
-
   .stat {
     background: var(--panel);
 
@@ -467,10 +387,8 @@
     position: relative;
   }
 
-
   .stat .label {
     font-size: 10.5px;
-
     color: var(--text-dim);
 
     margin-bottom: 8px;
@@ -478,10 +396,8 @@
     font-family: var(--mono);
 
     letter-spacing: 0.04em;
-
     text-transform: uppercase;
   }
-
 
   .stat .value {
     font-size: 21px;
@@ -491,31 +407,22 @@
     font-family: var(--mono);
   }
 
-
   .stat .value.accent {
     color: var(--accent);
-
-    text-shadow:
-      0 0 16px var(--accent-glow);
+    text-shadow: 0 0 16px var(--accent-glow);
   }
-
 
   .stat .value.pink {
     color: var(--pink);
-
-    text-shadow:
-      0 0 16px var(--pink-glow);
+    text-shadow: 0 0 16px var(--pink-glow);
   }
-
 
   .stat .value.muted {
     color: var(--text-dim);
 
     font-size: 15px;
-
     font-weight: 500;
   }
-
 
   .confidence-bar {
     height: 3px;
@@ -529,7 +436,6 @@
     overflow: hidden;
   }
 
-
   .confidence-fill {
     height: 100%;
 
@@ -540,18 +446,11 @@
         var(--accent)
       );
 
-    box-shadow:
-      0 0 8px var(--accent-glow);
+    box-shadow: 0 0 8px var(--accent-glow);
   }
-
-
-  /* =========================
-     HOP NOTE
-     ========================= */
 
   .hop-note {
     font-family: var(--mono);
-
     font-size: 11px;
 
     color: var(--text-dim);
@@ -561,15 +460,9 @@
     padding: 0 2px;
   }
 
-
   .hop-note span {
     color: var(--pink);
   }
-
-
-  /* =========================
-     FLAGS
-     ========================= */
 
   .flag-row {
     display: flex;
@@ -598,7 +491,6 @@
     font-family: var(--mono);
   }
 
-
   .flag-icon {
     width: 16px;
     height: 16px;
@@ -608,9 +500,7 @@
     border-radius: 50%;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
     font-size: 10px;
@@ -618,21 +508,14 @@
     flex-shrink: 0;
   }
 
-
-  /* =========================
-     PANELS
-     ========================= */
-
   .panel-header {
     display: flex;
 
     justify-content: space-between;
-
     align-items: baseline;
 
     margin-bottom: 10px;
   }
-
 
   .panel-title {
     font-size: 11px;
@@ -646,7 +529,6 @@
     font-family: var(--mono);
   }
 
-
   .panel-meta {
     font-size: 10.5px;
 
@@ -655,38 +537,26 @@
     font-family: var(--mono);
   }
 
-
-  /* =========================
-     GRAPH
-     ========================= */
-
   #graph {
     background:
       radial-gradient(
         circle at 25% 15%,
-        rgba(67,230,196,0.05),
+        rgba(67, 230, 196, 0.05),
         transparent 40%
       ),
-
       radial-gradient(
         circle at 80% 85%,
-        rgba(255,61,138,0.05),
+        rgba(255, 61, 138, 0.05),
         transparent 40%
       ),
-
       var(--panel);
 
     border: 1px solid var(--border);
 
     border-radius: 4px;
 
-    height: 520px;
+    height: 560px;
   }
-
-
-  /* =========================
-     LEGEND
-     ========================= */
 
   .legend {
     display: flex;
@@ -704,7 +574,6 @@
     flex-wrap: wrap;
   }
 
-
   .legend .dot {
     width: 8px;
     height: 8px;
@@ -718,14 +587,20 @@
     vertical-align: middle;
   }
 
+  .section {
+    margin-top: 20px;
+  }
 
-  /* =========================
-     CLUSTER INFO
-     ========================= */
+  .info-grid {
+    display: grid;
 
-  .cluster-info {
-    margin-top: 16px;
+    grid-template-columns:
+      repeat(2, 1fr);
 
+    gap: 12px;
+  }
+
+  .info-card {
     background: var(--panel);
 
     border: 1px solid var(--border);
@@ -735,13 +610,12 @@
     padding: 16px;
   }
 
+  .info-card-title {
+    color: var(--text-dim);
 
-  .cluster-info-title {
     font-family: var(--mono);
 
-    font-size: 11px;
-
-    color: var(--text-dim);
+    font-size: 10px;
 
     text-transform: uppercase;
 
@@ -750,103 +624,99 @@
     margin-bottom: 12px;
   }
 
-
-  .cluster-stats {
-    display: grid;
-
-    grid-template-columns:
-      repeat(4, 1fr);
-
-    gap: 10px;
-  }
-
-
-  .cluster-stat {
-    background: var(--panel-raised);
-
-    border: 1px solid var(--border);
-
-    padding: 10px;
-
-    border-radius: 3px;
-  }
-
-
-  .cluster-stat-label {
+  .info-value {
     font-family: var(--mono);
 
-    font-size: 9px;
+    color: var(--text);
 
-    color: var(--text-dim);
+    font-size: 12px;
 
-    margin-bottom: 5px;
-
-    text-transform: uppercase;
+    line-height: 1.7;
   }
 
-
-  .cluster-stat-value {
-    font-family: var(--mono);
-
-    font-size: 15px;
-
+  .info-value strong {
     color: var(--accent);
+  }
+
+  .vasp-highlight {
+    color: var(--pink);
+
+    text-shadow:
+      0 0 10px var(--pink-glow);
 
     font-weight: 700;
   }
 
-
-  .vasp-evidence {
-    margin-top: 14px;
-
-    padding-top: 14px;
-
-    border-top: 1px solid var(--border);
-
-    font-family: var(--mono);
-
-    font-size: 11px;
-
-    color: var(--text-dim);
-  }
-
-
-  .vasp-evidence strong {
-    color: var(--pink);
-  }
-
-
-  .cluster-members {
-    margin-top: 10px;
-
+  .cluster-list {
     display: flex;
 
     flex-wrap: wrap;
 
-    gap: 6px;
+    gap: 8px;
+
+    margin-top: 8px;
   }
 
-
-  .cluster-member {
-    border: 1px solid var(--border-bright);
-
+  .cluster-chip {
     background: var(--panel-raised);
 
-    color: var(--text);
+    border: 1px solid var(--border-bright);
 
-    padding: 5px 8px;
+    color: var(--text-dim);
+
+    padding: 6px 9px;
 
     border-radius: 3px;
 
     font-family: var(--mono);
 
-    font-size: 9px;
+    font-size: 10px;
   }
 
+  .cluster-chip.active {
+    border-color: var(--accent);
 
-  /* =========================
-     FOOTER
-     ========================= */
+    color: var(--accent);
+
+    box-shadow:
+      0 0 10px var(--accent-glow);
+  }
+
+  .connection-row {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 8px 0;
+
+    border-bottom: 1px solid var(--border);
+  }
+
+  .connection-row:last-child {
+    border-bottom: none;
+  }
+
+  .connection-address {
+    color: var(--text);
+
+    font-family: var(--mono);
+
+    font-size: 10px;
+
+    word-break: break-all;
+  }
+
+  .connection-name {
+    color: var(--pink);
+
+    font-family: var(--mono);
+
+    font-size: 10px;
+
+    font-weight: 700;
+  }
 
   .footer-row {
     display: flex;
@@ -858,7 +728,6 @@
     margin-top: 14px;
   }
 
-
   .footer-note {
     font-size: 11px;
 
@@ -866,11 +735,6 @@
 
     font-family: var(--mono);
   }
-
-
-  /* =========================
-     LOADING
-     ========================= */
 
   .loading {
     color: var(--pink);
@@ -882,14 +746,11 @@
     font-family: var(--mono);
   }
 
-
   .loading::after {
     content: '▍';
 
-    animation:
-      blink 0.9s step-end infinite;
+    animation: blink 0.9s step-end infinite;
   }
-
 
   @keyframes blink {
     50% {
@@ -897,12 +758,39 @@
     }
   }
 
+  @media (max-width: 800px) {
+    main {
+      padding: 24px 16px;
+    }
+
+    header {
+      padding: 16px;
+    }
+
+    header .tag {
+      display: none;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .search-row {
+      flex-direction: column;
+    }
+
+    #graph {
+      height: 500px;
+    }
+  }
 </style>
 </head>
 
-
 <body>
-
 
 <header>
 
@@ -999,11 +887,9 @@
 
   </svg>
 
-
   <h1>
     CRYPTOTRACE // VASP-ATTRIBUTION
   </h1>
-
 
   <span class="tag">
     SIH26182 · graph intelligence prototype
@@ -1012,23 +898,20 @@
 </header>
 
 
-
 <main>
 
   <div class="search-label">
     $ trace --address
   </div>
 
-
   <div class="search-row">
 
     <input
       id="addressInput"
       type="text"
-      placeholder="Enter Ethereum wallet address..."
+      placeholder="0x..."
       value=""
-    />
-
+    >
 
     <button
       id="searchBtn"
@@ -1040,7 +923,6 @@
 
   </div>
 
-
   <div
     class="input-error"
     id="inputError"
@@ -1050,13 +932,12 @@
   <div id="output">
 
     <div class="empty-state">
-      // awaiting input — enter an Ethereum wallet address and run trace
+      // awaiting input — enter a wallet address and run trace
     </div>
 
   </div>
 
 </main>
-
 
 
 <script>
@@ -1066,10 +947,11 @@
   let lastResult = null;
 
 
-
-  /* =========================================
-     ETHEREUM ADDRESS VALIDATION
-     ========================================= */
+  /*
+   * ============================================================
+   * ADDRESS VALIDATION
+   * ============================================================
+   */
 
   function isValidAddress(addr) {
 
@@ -1078,10 +960,11 @@
   }
 
 
-
-  /* =========================================
-     LOOKUP
-     ========================================= */
+  /*
+   * ============================================================
+   * LOOKUP
+   * ============================================================
+   */
 
   async function lookup() {
 
@@ -1091,18 +974,14 @@
         .value
         .trim();
 
-
     const btn =
       document.getElementById('searchBtn');
-
 
     const output =
       document.getElementById('output');
 
-
     const input =
       document.getElementById('addressInput');
-
 
     const errorEl =
       document.getElementById('inputError');
@@ -1113,14 +992,10 @@
     input.classList.remove('invalid');
 
 
-    /* -----------------------------------------
-       Empty address
-       ----------------------------------------- */
-
     if (!address) {
 
       errorEl.textContent =
-        '// wallet address is required';
+        '// enter an Ethereum wallet address';
 
       input.classList.add('invalid');
 
@@ -1129,14 +1004,10 @@
     }
 
 
-    /* -----------------------------------------
-       Ethereum address validation
-       ----------------------------------------- */
-
     if (!isValidAddress(address)) {
 
       errorEl.textContent =
-        '// invalid Ethereum wallet address — expected 0x + 40 hexadecimal characters';
+        '// invalid format — expected a 42-character 0x address';
 
       input.classList.add('invalid');
 
@@ -1149,17 +1020,10 @@
 
 
     output.innerHTML =
-      '<div class="loading">fetching Etherscan transaction data and analyzing graph</div>';
+      '<div class="loading">tracing graph activity</div>';
 
 
     try {
-
-      /* -----------------------------------------
-         Call OUR Flask backend API
-         
-         Frontend does NOT call Etherscan directly.
-         Our backend calls Etherscan securely.
-         ----------------------------------------- */
 
       const res =
         await fetch(
@@ -1167,31 +1031,14 @@
         );
 
 
-      let data;
+      const data =
+        await res.json();
 
-      try {
-
-        data = await res.json();
-
-      } catch (jsonError) {
-
-        throw new Error(
-          'Backend returned an invalid response'
-        );
-
-      }
-
-
-      /* -----------------------------------------
-         Backend error
-         ----------------------------------------- */
 
       if (!res.ok || data.error) {
 
         throw new Error(
-          data.message ||
-          data.error ||
-          `Backend request failed (${res.status})`
+          data.message || data.error || 'Backend request failed'
         );
 
       }
@@ -1199,20 +1046,21 @@
 
       lastResult = data;
 
-
       renderResult(data);
 
+    }
 
-    } catch (err) {
+    catch (err) {
 
-      output.innerHTML =
-        `
+      output.innerHTML = `
         <div class="empty-state">
           // error — ${escapeHtml(err.message)}
         </div>
-        `;
+      `;
 
-    } finally {
+    }
+
+    finally {
 
       btn.disabled = false;
 
@@ -1221,12 +1069,17 @@
   }
 
 
-
-  /* =========================================
-     HTML ESCAPE
-     ========================================= */
+  /*
+   * ============================================================
+   * HTML ESCAPE
+   * ============================================================
+   */
 
   function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+      return '';
+    }
 
     return String(value)
       .replace(/&/g, '&amp;')
@@ -1238,19 +1091,16 @@
   }
 
 
+  /*
+   * ============================================================
+   * SHORT ADDRESS
+   * ============================================================
+   */
 
-  /* =========================================
-     SHORTEN ADDRESS
-     ========================================= */
-
-  function shortenAddress(address) {
+  function shortAddress(address) {
 
     if (!address) {
-      return '';
-    }
-
-    if (address.length <= 18) {
-      return address;
+      return '—';
     }
 
     return (
@@ -1262,10 +1112,11 @@
   }
 
 
-
-  /* =========================================
-     RENDER RESULT
-     ========================================= */
+  /*
+   * ============================================================
+   * RENDER RESULT
+   * ============================================================
+   */
 
   function renderResult(data) {
 
@@ -1274,45 +1125,421 @@
 
 
     const conf =
-      data.confidence || 0;
+      Number(data.confidence || 0);
 
 
     const flags =
-      data.flags || [];
+      Array.isArray(data.flags)
+        ? data.flags
+        : [];
 
 
     const graph =
       data.graph_analysis || {};
 
 
+    const nearestVasp =
+      graph.nearest_vasp || null;
+
+
+    const graphNodes =
+      Array.isArray(graph.graph_nodes)
+        ? graph.graph_nodes
+        : [];
+
+
+    const graphEdges =
+      Array.isArray(graph.graph_edges)
+        ? graph.graph_edges
+        : [];
+
+
+    const clusters =
+      Array.isArray(graph.clusters)
+        ? graph.clusters
+        : [];
+
+
+    /*
+     * ----------------------------------------------------------
+     * HOP MESSAGE
+     * ----------------------------------------------------------
+     */
+
+    let hopMessage = '';
+
+
+    if (
+      data.matched_vasp &&
+      data.hops === 0
+    ) {
+
+      hopMessage = `
+        <div class="hop-note">
+          // <span>direct</span> VASP match
+        </div>
+      `;
+
+    }
+
+    else if (
+      data.matched_vasp &&
+      data.hops > 0 &&
+      data.matched_via
+    ) {
+
+      hopMessage = `
+        <div class="hop-note">
+          // matched VASP
+          <span>${data.hops} hop${data.hops > 1 ? 's' : ''}</span>
+          away through
+          ${escapeHtml(shortAddress(data.matched_via))}
+        </div>
+      `;
+
+    }
+
+    else {
+
+      hopMessage = `
+        <div class="hop-note">
+          // no VASP found within current graph
+        </div>
+      `;
+
+    }
+
+
+    /*
+     * ----------------------------------------------------------
+     * FLAGS
+     * ----------------------------------------------------------
+     */
+
+    let flagsHtml = '';
+
+
+    if (flags.length > 0) {
+
+      const flagText =
+        flags
+          .map(flag => {
+
+            if (
+              typeof flag === 'string'
+            ) {
+
+              return flag
+                .replace(/_/g, ' ')
+                .toUpperCase();
+
+            }
+
+
+            if (
+              flag &&
+              flag.type === 'repeated_transaction'
+            ) {
+
+              return (
+                'REPEATED TRANSACTION × ' +
+                flag.count
+              );
+
+            }
+
+
+            return 'SUSPICIOUS ACTIVITY';
+
+          })
+          .join(' · ');
+
+
+      flagsHtml = `
+        <div class="flag-row">
+
+          <span class="flag-icon">
+            !
+          </span>
+
+          FLAGGED — ${escapeHtml(flagText)}
+
+        </div>
+      `;
+
+    }
+
+
+    /*
+     * ----------------------------------------------------------
+     * VASP EVIDENCE
+     * ----------------------------------------------------------
+     */
+
+    let vaspEvidenceHtml = '';
+
+
+    if (
+      nearestVasp &&
+      nearestVasp.address
+    ) {
+
+      vaspEvidenceHtml = `
+
+        <div class="info-card">
+
+          <div class="info-card-title">
+            Graph VASP Evidence
+          </div>
+
+          <div class="info-value">
+
+            <div>
+              VASP:
+              <strong class="vasp-highlight">
+                ${escapeHtml(
+                  nearestVasp.vasp_name || data.matched_vasp || 'Unknown'
+                )}
+              </strong>
+            </div>
+
+            <div>
+              Matched wallet:
+              <span class="connection-address">
+                ${escapeHtml(
+                  nearestVasp.address
+                )}
+              </span>
+            </div>
+
+            <div>
+              Graph distance:
+              <strong>
+                ${escapeHtml(
+                  nearestVasp.hops
+                )}
+                hop${nearestVasp.hops === 1 ? '' : 's'}
+              </strong>
+            </div>
+
+            ${
+              Array.isArray(nearestVasp.path)
+              ? `
+                <div style="margin-top:8px;">
+                  Path:
+                </div>
+
+                <div
+                  class="connection-address"
+                  style="line-height:1.8;"
+                >
+                  ${nearestVasp.path
+                    .map(address =>
+                      escapeHtml(shortAddress(address))
+                    )
+                    .join(' → ')
+                  }
+                </div>
+              `
+              : ''
+            }
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /*
+     * ----------------------------------------------------------
+     * CLUSTER STATS
+     * ----------------------------------------------------------
+     */
+
+    let clusterStatsHtml = '';
+
+
+    if (
+      graph.suspect_cluster &&
+      clusters.length > 0
+    ) {
+
+      const suspectCluster =
+        clusters.find(
+          cluster =>
+            Number(cluster.cluster_id) ===
+            Number(graph.suspect_cluster)
+        );
+
+
+      if (suspectCluster) {
+
+        clusterStatsHtml = `
+
+          <div class="info-card">
+
+            <div class="info-card-title">
+              Suspect Cluster Statistics
+            </div>
+
+            <div class="info-value">
+
+              <div>
+                Cluster:
+                <strong>
+                  #${escapeHtml(
+                    suspectCluster.cluster_id
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                Wallets:
+                <strong>
+                  ${escapeHtml(
+                    suspectCluster.wallet_count
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                Internal edges:
+                <strong>
+                  ${escapeHtml(
+                    suspectCluster.internal_edges
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                Transaction weight:
+                <strong>
+                  ${escapeHtml(
+                    suspectCluster.total_transaction_weight
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                Average degree:
+                <strong>
+                  ${escapeHtml(
+                    suspectCluster.average_degree
+                  )}
+                </strong>
+              </div>
+
+            </div>
+
+          </div>
+
+        `;
+
+      }
+
+    }
+
+
+    /*
+     * ----------------------------------------------------------
+     * VASP CONNECTIONS
+     * ----------------------------------------------------------
+     */
+
+    let connectionsHtml = '';
+
+
     const vaspConnections =
-      graph.vasp_connections || [];
+      Array.isArray(graph.vasp_connections)
+        ? graph.vasp_connections
+        : [];
 
 
-    /* -----------------------------------------
-       DATA SOURCE
-       ----------------------------------------- */
+    if (vaspConnections.length > 0) {
 
-    const sourceLabel =
-      data.data_source === 'etherscan'
-        ? 'Etherscan API'
-        : 'Unknown';
+      connectionsHtml = `
+
+        <div class="info-card">
+
+          <div class="info-card-title">
+            VASP Connections Inside Suspect Cluster
+          </div>
+
+          <div class="info-value">
+
+            ${
+              vaspConnections
+                .map(connection => {
+
+                  const address =
+                    connection.address ||
+                    connection.vasp_address ||
+                    '';
+
+                  const name =
+                    connection.vasp_name ||
+                    connection.name ||
+                    'Unknown';
 
 
+                  return `
+
+                    <div class="connection-row">
+
+                      <span
+                        class="connection-address"
+                      >
+                        ${escapeHtml(
+                          shortAddress(address)
+                        )}
+                      </span>
+
+                      <span
+                        class="connection-name"
+                      >
+                        ${escapeHtml(name)}
+                      </span>
+
+                    </div>
+
+                  `;
+
+                })
+                .join('')
+            }
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /*
+     * ----------------------------------------------------------
+     * MAIN RESULT HTML
+     * ----------------------------------------------------------
+     */
 
     let html = `
 
       <div class="summary-grid">
 
-
         <div class="stat">
 
           <div class="label">
-            Transactions
+            Root Transactions
           </div>
 
           <div class="value">
-            ${data.tx_count || 0}
+            ${escapeHtml(
+              data.tx_count ?? 0
+            )}
           </div>
 
         </div>
@@ -1324,19 +1551,19 @@
             Matched VASP
           </div>
 
-          <div class="value ${
-            data.matched_vasp
-              ? 'pink'
-              : 'muted'
-          }">
-
+          <div
+            class="value ${
+              data.matched_vasp
+                ? 'pink'
+                : 'muted'
+            }"
+          >
             ${
               escapeHtml(
                 data.matched_vasp ||
-                'NO DIRECT MATCH'
+                'NO MATCH'
               )
             }
-
           </div>
 
         </div>
@@ -1348,16 +1575,15 @@
             Confidence
           </div>
 
-          <div class="value ${
-            conf > 0
-              ? 'accent'
-              : 'muted'
-          }">
-
+          <div
+            class="value ${
+              conf > 0
+                ? 'accent'
+                : 'muted'
+            }"
+          >
             ${conf}%
-
           </div>
-
 
           <div class="confidence-bar">
 
@@ -1381,8 +1607,11 @@
 
             ${
               graph.suspect_cluster
-                ? '#' + graph.suspect_cluster
-                : 'N/A'
+                ? '#' +
+                  escapeHtml(
+                    graph.suspect_cluster
+                  )
+                : '—'
             }
 
           </div>
@@ -1391,133 +1620,12 @@
 
       </div>
 
-    `;
+
+      ${hopMessage}
 
 
+      ${flagsHtml}
 
-    /* =========================================
-       GRAPH INFORMATION NOTE
-       ========================================= */
-
-    if (
-      graph.suspect_cluster &&
-      graph.cluster_size
-    ) {
-
-      html += `
-
-        <div class="hop-note">
-
-          // suspect belongs to
-          <span>
-            cluster ${graph.suspect_cluster}
-          </span>
-
-          containing
-          <span>
-            ${graph.cluster_size} wallets
-          </span>
-
-        </div>
-
-      `;
-
-    }
-
-
-
-    /* =========================================
-       DIRECT / HOP INFORMATION
-       ========================================= */
-
-    if (
-      data.matched_vasp &&
-      data.hops === 1 &&
-      data.matched_via
-    ) {
-
-      html += `
-
-        <div class="hop-note">
-
-          // matched via
-          <span>1 hop</span>
-          through
-          ${shortenAddress(data.matched_via)}
-
-        </div>
-
-      `;
-
-    }
-
-    else if (
-      data.matched_vasp &&
-      data.hops === 0
-    ) {
-
-      html += `
-
-        <div class="hop-note">
-
-          // <span>direct</span>
-          transaction with matched VASP
-
-        </div>
-
-      `;
-
-    }
-
-
-
-    /* =========================================
-       FLAGS
-       ========================================= */
-
-    if (flags.length > 0) {
-
-      html += `
-
-        <div class="flag-row">
-
-          <span class="flag-icon">
-            !
-          </span>
-
-          FLAGGED —
-
-          ${flags
-            .map(flag => {
-
-              if (typeof flag === 'string') {
-                return escapeHtml(flag);
-              }
-
-              return escapeHtml(
-                flag.type ||
-                'UNKNOWN'
-              );
-
-            })
-            .join(', ')
-            .replace(/_/g,' ')
-            .toUpperCase()
-          }
-
-        </div>
-
-      `;
-
-    }
-
-
-
-    /* =========================================
-       GRAPH PANEL
-       ========================================= */
-
-    html += `
 
       <div class="panel-header">
 
@@ -1527,21 +1635,19 @@
 
         <span class="panel-meta">
 
-          ${
-            graph.nodes || 0
-          }
+          ${escapeHtml(
+            graph.nodes ?? graphNodes.length
+          )}
           nodes ·
 
-          ${
-            graph.edges || 0
-          }
+          ${escapeHtml(
+            graph.edges ?? graphEdges.length
+          )}
           edges ·
 
-          ${
-            graph.clusters
-              ? graph.clusters.length
-              : 0
-          }
+          ${escapeHtml(
+            clusters.length
+          )}
           clusters
 
         </span>
@@ -1554,222 +1660,147 @@
 
       <div class="legend">
 
-
         <span>
-
           <span
             class="dot"
             style="background:#43E6C4;"
           ></span>
-
           Searched address
-
         </span>
 
 
         <span>
-
           <span
             class="dot"
             style="background:#FF3D8A;"
           ></span>
-
-          Known VASP
-
+          Matched VASP
         </span>
 
 
         <span>
+          <span
+            class="dot"
+            style="background:#7B6FE8;"
+          ></span>
+          Same cluster
+        </span>
 
+
+        <span>
           <span
             class="dot"
             style="background:#5F6285;"
           ></span>
-
-          Wallet
-
-        </span>
-
-
-        <span>
-
-          <span
-            class="dot"
-            style="background:#8B7CFF;"
-          ></span>
-
-          Same cluster
-
+          Other wallet
         </span>
 
       </div>
 
-    `;
+
+      <div class="section">
+
+        <div class="panel-header">
+
+          <span class="panel-title">
+            Graph Intelligence
+          </span>
+
+          <span class="panel-meta">
+            NetworkX · Louvain · BFS
+          </span>
+
+        </div>
 
 
+        <div class="info-grid">
 
-    /* =========================================
-       CLUSTER INFORMATION
-       ========================================= */
+          ${vaspEvidenceHtml}
 
-    if (graph.suspect_cluster) {
+          ${clusterStatsHtml}
 
-      const suspectCluster =
-        graph.clusters
-          ? graph.clusters.find(
-              cluster =>
-                cluster.cluster_id ===
-                graph.suspect_cluster
-            )
-          : null;
+          ${connectionsHtml}
 
+          <div class="info-card">
 
-      if (suspectCluster) {
-
-        html += `
-
-          <div class="cluster-info">
-
-            <div class="cluster-info-title">
-
-              Suspect Cluster Analysis
-
+            <div class="info-card-title">
+              Graph Trace Metrics
             </div>
 
+            <div class="info-value">
 
-            <div class="cluster-stats">
-
-
-              <div class="cluster-stat">
-
-                <div class="cluster-stat-label">
-                  Wallets
-                </div>
-
-                <div class="cluster-stat-value">
-                  ${suspectCluster.wallet_count}
-                </div>
-
+              <div>
+                Root transactions:
+                <strong>
+                  ${escapeHtml(
+                    data.tx_count ?? 0
+                  )}
+                </strong>
               </div>
 
-
-              <div class="cluster-stat">
-
-                <div class="cluster-stat-label">
-                  Internal Edges
-                </div>
-
-                <div class="cluster-stat-value">
-                  ${suspectCluster.internal_edges}
-                </div>
-
+              <div>
+                Graph transactions:
+                <strong>
+                  ${escapeHtml(
+                    data.graph_tx_count ?? 0
+                  )}
+                </strong>
               </div>
 
-
-              <div class="cluster-stat">
-
-                <div class="cluster-stat-label">
-                  Transaction Weight
-                </div>
-
-                <div class="cluster-stat-value">
-                  ${suspectCluster.total_transaction_weight}
-                </div>
-
+              <div>
+                Wallets fetched:
+                <strong>
+                  ${escapeHtml(
+                    data.fetched_wallet_count ?? 0
+                  )}
+                </strong>
               </div>
 
-
-              <div class="cluster-stat">
-
-                <div class="cluster-stat-label">
-                  Avg Degree
-                </div>
-
-                <div class="cluster-stat-value">
-                  ${suspectCluster.average_degree}
-                </div>
-
+              <div>
+                Trace depth:
+                <strong>
+                  ${escapeHtml(
+                    data.trace_depth ?? 2
+                  )} hops
+                </strong>
               </div>
 
+              <div>
+                Suspect in-degree:
+                <strong>
+                  ${escapeHtml(
+                    graph.suspect_in_degree ?? 0
+                  )}
+                </strong>
+              </div>
 
-            </div>
-
-
-
-            ${
-              vaspConnections.length > 0
-                ? `
-
-                  <div class="vasp-evidence">
-
-                    Known VASP connection in
-                    suspect cluster:
-
-                    ${
-                      vaspConnections
-                        .map(
-                          vasp =>
-                            `<strong>${escapeHtml(vasp.vasp_name)}</strong>`
-                        )
-                        .join(', ')
-                    }
-
-                  </div>
-
-                `
-                : `
-
-                  <div class="vasp-evidence">
-
-                    No known VASP address found
-                    inside suspect cluster.
-
-                  </div>
-
-                `
-            }
-
-
-
-            <div class="cluster-members">
-
-              ${
-                suspectCluster.members
-                  .map(
-                    wallet => `
-                      <span class="cluster-member">
-                        ${escapeHtml(wallet)}
-                      </span>
-                    `
-                  )
-                  .join('')
-              }
+              <div>
+                Suspect out-degree:
+                <strong>
+                  ${escapeHtml(
+                    graph.suspect_out_degree ?? 0
+                  )}
+                </strong>
+              </div>
 
             </div>
 
           </div>
 
-        `;
+        </div>
 
-      }
+      </div>
 
-    }
-
-
-
-    /* =========================================
-       FOOTER
-       ========================================= */
-
-    html += `
 
       <div class="footer-row">
 
         <div class="footer-note">
 
           // data source:
-          ${sourceLabel} ·
-          NetworkX + Louvain
+          ${escapeHtml(
+            data.data_source || 'unknown'
+          )}
+          · bounded graph expansion
 
         </div>
 
@@ -1778,15 +1809,12 @@
           class="btn-secondary"
           onclick="exportReport()"
         >
-
           ↓ EXPORT JSON
-
         </button>
 
       </div>
 
     `;
-
 
 
     output.innerHTML = html;
@@ -1797,10 +1825,11 @@
   }
 
 
-
-  /* =========================================
-     EXPORT REPORT
-     ========================================= */
+  /*
+   * ============================================================
+   * EXPORT REPORT
+   * ============================================================
+   */
 
   function exportReport() {
 
@@ -1836,16 +1865,10 @@
 
 
     a.download =
-      `graph-analysis-report-${
-        lastResult.address.slice(0,8)
-      }.json`;
+      `attribution-report-${lastResult.address.slice(0,8)}.json`;
 
-
-    document.body.appendChild(a);
 
     a.click();
-
-    document.body.removeChild(a);
 
 
     URL.revokeObjectURL(url);
@@ -1853,13 +1876,25 @@
   }
 
 
-
-  /* =========================================
-     RENDER GRAPH
-     
-     Uses graph_analysis returned by
-     graph_analysis.py
-     ========================================= */
+  /*
+   * ============================================================
+   * GRAPH RENDERING
+   *
+   * IMPORTANT:
+   *
+   * Matched VASP is identified using:
+   *
+   * data.graph_analysis.nearest_vasp.address
+   *
+   * NOT merely the first transaction's receiver.
+   *
+   * Therefore:
+   *
+   * Suspect → Wallet A → KuCoin
+   *
+   * KuCoin will be PINK.
+   * ============================================================
+   */
 
   function renderGraph(data) {
 
@@ -1874,74 +1909,149 @@
     }
 
 
-    const graph =
-      data.graph_analysis;
+    const container =
+      document.getElementById('graph');
 
 
-    if (
-      !graph ||
-      !graph.graph_nodes ||
-      !graph.graph_edges
-    ) {
-
-      document.getElementById('graph').innerHTML =
-        `
-        <div class="empty-state">
-          // graph data unavailable
-        </div>
-        `;
-
+    if (!container) {
       return;
-
     }
 
 
+    const graph =
+      data.graph_analysis || {};
 
-    /* =========================================
-       CREATE NODES
-       ========================================= */
 
-    const nodes =
-      graph.graph_nodes.map(node => {
+    const graphNodes =
+      Array.isArray(graph.graph_nodes)
+        ? graph.graph_nodes
+        : [];
 
+
+    const graphEdges =
+      Array.isArray(graph.graph_edges)
+        ? graph.graph_edges
+        : [];
+
+
+    const searchedAddress =
+      String(
+        data.address || ''
+      ).toLowerCase();
+
+
+    /*
+     * THIS IS THE IMPORTANT FIX
+     *
+     * Backend gives us the exact VASP wallet
+     * discovered by graph analysis.
+     */
+
+    const matchedVaspAddress =
+      graph.nearest_vasp &&
+      graph.nearest_vasp.address
+        ? String(
+            graph.nearest_vasp.address
+          ).toLowerCase()
+        : (
+            data.matched_via
+              ? String(
+                  data.matched_via
+                ).toLowerCase()
+              : null
+          );
+
+
+    const suspectCluster =
+      graph.suspect_cluster;
+
+
+    /*
+     * ----------------------------------------------------------
+     * BUILD NODES
+     * ----------------------------------------------------------
+     */
+
+    const nodes = [];
+
+
+    graphNodes.forEach(
+      node => {
+
+        const nodeId =
+          String(
+            node.id || ''
+          );
+
+
+        const normalizedId =
+          nodeId.toLowerCase();
+
+
+        /*
+         * Search wallet
+         */
 
         const isSuspect =
-          node.id.toLowerCase() ===
-          data.address.toLowerCase();
+          normalizedId ===
+          searchedAddress;
 
 
-        const vasp =
-          graph.vasp_connections
-            ? graph.vasp_connections.find(
-                v =>
-                  v.address.toLowerCase() ===
-                  node.id.toLowerCase()
-              )
-            : null;
+        /*
+         * EXACT MATCHED VASP
+         *
+         * This is what fixes the 2-hop pink issue.
+         */
+
+        const isMatchedVasp =
+          matchedVaspAddress &&
+          normalizedId ===
+          matchedVaspAddress;
 
 
-        const isVASP =
-          Boolean(vasp);
-
+        /*
+         * Same Louvain cluster
+         */
 
         const isSameCluster =
-          node.cluster ===
-          graph.suspect_cluster;
+          !isSuspect &&
+          !isMatchedVasp &&
+          suspectCluster !== null &&
+          suspectCluster !== undefined &&
+          Number(node.cluster) ===
+          Number(suspectCluster);
 
 
-        let background;
-
-        let border;
-
-        let fontColor;
-
-        let size;
+        let background =
+          '#131629';
 
 
+        let border =
+          '#362F5C';
 
-        /* -------------------------
-           SUSPECT
-           ------------------------- */
+
+        let fontColor =
+          '#DCE0F2';
+
+
+        let size =
+          14;
+
+
+        let borderWidth =
+          1;
+
+
+        /*
+         * ------------------------------------------------------
+         * NODE PRIORITY
+         *
+         * 1. Suspect
+         * 2. Matched VASP
+         * 3. Same cluster
+         * 4. Other wallet
+         * ------------------------------------------------------
+         */
 
         if (isSuspect) {
 
@@ -1955,17 +2065,18 @@
             '#04140F';
 
           size =
-            28;
+            26;
+
+          borderWidth =
+            2;
 
         }
 
+        else if (isMatchedVasp) {
 
-
-        /* -------------------------
-           VASP
-           ------------------------- */
-
-        else if (isVASP) {
+          /*
+           * PINK VASP NODE
+           */
 
           background =
             '#2A1122';
@@ -1977,62 +2088,62 @@
             '#FF3D8A';
 
           size =
-            23;
+            22;
+
+          borderWidth =
+            3;
 
         }
-
-
-
-        /* -------------------------
-           SAME CLUSTER
-           ------------------------- */
 
         else if (isSameCluster) {
 
           background =
-            '#19182E';
+            '#17152C';
 
           border =
-            '#8B7CFF';
+            '#7B6FE8';
 
           fontColor =
-            '#DCE0F2';
+            '#A69DF5';
 
           size =
-            17;
+            16;
+
+          borderWidth =
+            1.5;
 
         }
 
 
+        nodes.push({
 
-        /* -------------------------
-           OTHER CLUSTER
-           ------------------------- */
+          id: nodeId,
 
-        else {
+          label:
+            isMatchedVasp
+              ? (
+                  nodeId.slice(0, 6) +
+                  '…\nVASP'
+                )
+              : (
+                  nodeId.slice(0, 6) +
+                  '…'
+                ),
 
-          background =
-            '#131629';
-
-          border =
-            '#362F5C';
-
-          fontColor =
-            '#DCE0F2';
-
-          size =
-            14;
-
-        }
-
-
-
-        return {
-
-          id: node.id,
-
-          label: node.label,
-
+          title:
+            isMatchedVasp
+              ? (
+                  'MATCHED VASP: ' +
+                  (
+                    graph.nearest_vasp
+                      ?.vasp_name ||
+                    data.matched_vasp ||
+                    'Unknown'
+                  ) +
+                  '\n\n' +
+                  nodeId
+                )
+              : nodeId,
 
           color: {
 
@@ -2040,10 +2151,37 @@
               background,
 
             border:
-              border
+              border,
+
+            highlight: {
+
+              background:
+                isMatchedVasp
+                  ? '#3D1830'
+                  : background,
+
+              border:
+                isMatchedVasp
+                  ? '#FF3D8A'
+                  : '#43E6C4'
+
+            },
+
+            hover: {
+
+              background:
+                isMatchedVasp
+                  ? '#3D1830'
+                  : background,
+
+              border:
+                isMatchedVasp
+                  ? '#FF3D8A'
+                  : '#43E6C4'
+
+            }
 
           },
-
 
           font: {
 
@@ -2054,193 +2192,262 @@
               'JetBrains Mono',
 
             size:
-              10
+              isMatchedVasp
+                ? 10
+                : 9,
+
+            bold:
+              isSuspect ||
+              isMatchedVasp
 
           },
-
 
           shape:
             'dot',
 
-
           size:
             size,
 
-
           borderWidth:
-            isSuspect || isVASP
-              ? 2
-              : 1,
+            borderWidth
+
+        });
+
+      }
+    );
 
 
-          title:
+    /*
+     * If backend graph_nodes somehow does not contain
+     * the searched address, add it manually.
+     */
 
-            `Wallet: ${node.id}\n` +
-
-            `Cluster: ${node.cluster}` +
-
-            (
-              isVASP
-                ? `\nVASP: ${vasp.vasp_name}`
-                : ''
-            )
-
-        };
-
-      });
-
-
-
-    /* =========================================
-       CREATE EDGES
-       ========================================= */
-
-    const edges =
-      graph.graph_edges.map(
-        (edge, index) => {
-
-
-          const isVASPConnection =
-            graph.vasp_connections &&
-            graph.vasp_connections.some(
-              vasp =>
-                vasp.address.toLowerCase() ===
-                edge.to.toLowerCase()
-            );
-
-
-          const fromNode =
-            graph.graph_nodes.find(
-              n =>
-                n.id === edge.from
-            );
-
-
-          const toNode =
-            graph.graph_nodes.find(
-              n =>
-                n.id === edge.to
-            );
-
-
-          const sameCluster =
-            fromNode &&
-            toNode &&
-            fromNode.cluster ===
-            toNode.cluster;
-
-
-
-          return {
-
-            id:
-              index,
-
-
-            from:
-              edge.from,
-
-
-            to:
-              edge.to,
-
-
-            arrows:
-              'to',
-
-
-            width:
-              Math.max(
-                1,
-                Math.min(
-                  edge.weight || 1,
-                  5
-                )
-              ),
-
-
-            label:
-              edge.weight > 1
-                ? `×${edge.weight}`
-                : '',
-
-
-            font: {
-
-              color:
-                '#5F6285',
-
-              face:
-                'JetBrains Mono',
-
-              size:
-                9,
-
-              align:
-                'middle'
-
-            },
-
-
-            color: {
-
-              color:
-                isVASPConnection
-                  ? '#FF3D8A'
-                  : sameCluster
-                    ? '#6F65B8'
-                    : '#2E4463',
-
-
-              highlight:
-                '#43E6C4'
-
-            },
-
-
-            smooth: {
-
-              type:
-                'dynamic'
-
-            }
-
-          };
-
-        }
+    const hasSuspect =
+      nodes.some(
+        node =>
+          String(node.id).toLowerCase() ===
+          searchedAddress
       );
 
 
+    if (!hasSuspect && searchedAddress) {
 
-    /* =========================================
-       CREATE NETWORK
-       ========================================= */
+      nodes.push({
 
-    const container =
-      document.getElementById(
-        'graph'
-      );
+        id: data.address,
 
+        label:
+          data.address.slice(0, 6) +
+          '…',
 
-    const network =
-      new vis.Network(
+        title:
+          data.address,
 
-        container,
+        color: {
 
-        {
+          background:
+            '#43E6C4',
 
-          nodes:
-            new vis.DataSet(
-              nodes
-            ),
-
-          edges:
-            new vis.DataSet(
-              edges
-            )
+          border:
+            '#1F7A68'
 
         },
 
+        font: {
+
+          color:
+            '#04140F',
+
+          face:
+            'JetBrains Mono',
+
+          size:
+            11,
+
+          bold:
+            true
+
+        },
+
+        shape:
+          'dot',
+
+        size:
+          26,
+
+        borderWidth:
+          2
+
+      });
+
+    }
+
+
+    /*
+     * ----------------------------------------------------------
+     * BUILD EDGES
+     * ----------------------------------------------------------
+     */
+
+    const edges = [];
+
+
+    graphEdges.forEach(
+      (edge, index) => {
+
+        const from =
+          String(
+            edge.from || ''
+          );
+
+
+        const to =
+          String(
+            edge.to || ''
+          );
+
+
+        if (!from || !to) {
+          return;
+        }
+
+
+        const normalizedFrom =
+          from.toLowerCase();
+
+
+        const normalizedTo =
+          to.toLowerCase();
+
+
+        const touchesMatchedVasp =
+          matchedVaspAddress &&
+          (
+            normalizedFrom ===
+              matchedVaspAddress ||
+
+            normalizedTo ===
+              matchedVaspAddress
+          );
+
+
+        const touchesSuspect =
+          normalizedFrom ===
+            searchedAddress ||
+
+          normalizedTo ===
+            searchedAddress;
+
+
+        const weight =
+          Number(
+            edge.weight || 1
+          );
+
+
+        let edgeColor =
+          '#2E4463';
+
+
+        let edgeWidth =
+          Math.min(
+            1 + weight * 0.35,
+            5
+          );
+
+
+        if (touchesMatchedVasp) {
+
+          /*
+           * EDGE CONNECTING TO VASP ALSO PINK
+           */
+
+          edgeColor =
+            '#FF3D8A';
+
+          edgeWidth =
+            Math.max(
+              edgeWidth,
+              2
+            );
+
+        }
+
+        else if (touchesSuspect) {
+
+          edgeColor =
+            '#43E6C4';
+
+        }
+
+
+        edges.push({
+
+          id:
+            `edge-${index}`,
+
+          from:
+            from,
+
+          to:
+            to,
+
+          arrows:
+            'to',
+
+          width:
+            edgeWidth,
+
+          color: {
+
+            color:
+              edgeColor,
+
+            highlight:
+              '#FF3D8A',
+
+            hover:
+              '#43E6C4',
+
+            opacity:
+              touchesMatchedVasp
+                ? 1
+                : 0.75
+
+          },
+
+          smooth: {
+
+            enabled:
+              true,
+
+            type:
+              'dynamic'
+
+          },
+
+          title:
+            `Transactions: ${weight}`
+
+        });
+
+      }
+    );
+
+
+    /*
+     * ----------------------------------------------------------
+     * NETWORK
+     * ----------------------------------------------------------
+     */
+
+    const network =
+      new vis.Network(
+        container,
+        {
+          nodes,
+          edges
+        },
         {
 
           physics: {
@@ -2248,26 +2455,38 @@
             enabled:
               true,
 
-            stabilization:
-              true,
+            stabilization: {
 
+              enabled:
+                true,
+
+              iterations:
+                400,
+
+              updateInterval:
+                50
+
+            },
 
             barnesHut: {
 
               gravitationalConstant:
-                -3000,
+                -4200,
 
               centralGravity:
-                0.2,
+                0.15,
 
               springLength:
-                150,
+                130,
 
               springConstant:
                 0.04,
 
               damping:
-                0.09
+                0.22,
+
+              avoidOverlap:
+                0.7
 
             }
 
@@ -2278,6 +2497,9 @@
 
             hover:
               true,
+
+            tooltipDelay:
+              120,
 
             navigationButtons:
               true,
@@ -2296,47 +2518,155 @@
 
           nodes: {
 
-            borderWidth:
-              1
+            shadow: {
+
+              enabled:
+                true,
+
+              color:
+                'rgba(0,0,0,0.35)',
+
+              size:
+                8,
+
+              x:
+                0,
+
+              y:
+                3
+
+            }
 
           },
 
 
           edges: {
 
-            arrows: {
+            selectionWidth:
+              2,
 
-              to: {
-
-                enabled:
-                  true,
-
-                scaleFactor:
-                  0.6
-
-              }
-
-            }
+            hoverWidth:
+              1.5
 
           }
 
         }
-
       );
 
 
+    /*
+     * ----------------------------------------------------------
+     * FOCUS ON SUSPECT
+     * ----------------------------------------------------------
+     */
 
-    /* =========================================
-       HIGHLIGHT SUSPECT WITH ANIMATED RING
-       ========================================= */
+    network.once(
+      'stabilizationIterationsDone',
+      function () {
+
+        if (
+          network.body.data.nodes.get(
+            data.address
+          )
+        ) {
+
+          network.focus(
+            data.address,
+            {
+
+              scale:
+                0.85,
+
+              animation: {
+
+                duration:
+                  700,
+
+                easingFunction:
+                  'easeInOutQuad'
+
+              }
+
+            }
+          );
+
+        }
+
+      }
+    );
+
+
+    /*
+     * ----------------------------------------------------------
+     * CLICK BEHAVIOR
+     * ----------------------------------------------------------
+     */
+
+    network.on(
+      'click',
+      function (params) {
+
+        if (
+          !params.nodes ||
+          params.nodes.length === 0
+        ) {
+
+          return;
+
+        }
+
+
+        const clickedId =
+          params.nodes[0];
+
+
+        const clickedNode =
+          graphNodes.find(
+            node =>
+              String(node.id) ===
+              String(clickedId)
+          );
+
+
+        if (!clickedNode) {
+          return;
+        }
+
+
+        const normalized =
+          String(
+            clickedNode.id
+          ).toLowerCase();
+
+
+        if (
+          matchedVaspAddress &&
+          normalized ===
+          matchedVaspAddress
+        ) {
+
+          network.selectNodes(
+            [clickedId]
+          );
+
+        }
+
+      }
+    );
+
+
+    /*
+     * ----------------------------------------------------------
+     * SUSPECT ANIMATED RING
+     * ----------------------------------------------------------
+     */
 
     let sweepAngle = 0;
 
 
     network.on(
       'afterDrawing',
-      function(ctx) {
-
+      function (ctx) {
 
         const positions =
           network.getPositions(
@@ -2360,12 +2690,12 @@
         ctx.save();
 
 
-
-        /* Outer ring */
+        /*
+         * Outer ring
+         */
 
         ctx.strokeStyle =
           'rgba(67,230,196,0.22)';
-
 
         ctx.lineWidth =
           1;
@@ -2375,33 +2705,27 @@
 
 
         ctx.arc(
-
           pos.x,
           pos.y,
-
           ringRadius,
-
           0,
           Math.PI * 2
-
         );
 
 
         ctx.stroke();
 
 
-
-        /* Animated sweep */
+        /*
+         * Animated sweep
+         */
 
         const grad =
           ctx.createLinearGradient(
-
             pos.x,
             pos.y,
-
             pos.x + ringRadius,
             pos.y
-
           );
 
 
@@ -2420,7 +2744,6 @@
         ctx.strokeStyle =
           grad;
 
-
         ctx.lineWidth =
           2;
 
@@ -2429,15 +2752,11 @@
 
 
         ctx.arc(
-
           pos.x,
           pos.y,
-
           ringRadius,
-
           sweepAngle,
           sweepAngle + 0.6
-
         );
 
 
@@ -2449,11 +2768,6 @@
       }
     );
 
-
-
-    /* =========================================
-       ANIMATE RING
-       ========================================= */
 
     sweepIntervalId =
       setInterval(
@@ -2471,16 +2785,17 @@
   }
 
 
-
-  /* =========================================
-     ENTER KEY SUPPORT
-     ========================================= */
+  /*
+   * ============================================================
+   * ENTER KEY SUPPORT
+   * ============================================================
+   */
 
   document
     .getElementById('addressInput')
     .addEventListener(
       'keydown',
-      function(event) {
+      function (event) {
 
         if (
           event.key === 'Enter'
@@ -2494,7 +2809,6 @@
     );
 
 </script>
-
 
 </body>
 </html>

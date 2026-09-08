@@ -1,279 +1,12 @@
+import csv
 import networkx as nx
 
 
-# ==========================================================
-# BUILD TRANSACTION GRAPH
-# ==========================================================
-
-def build_transaction_graph(transactions):
-    """
-    Build a directed weighted transaction graph.
-
-    Node  = wallet address
-    Edge  = transaction direction
-    Weight = number of transactions between two wallets
-    """
-
-    G = nx.DiGraph()
-
-    for sender, receiver in transactions:
-
-        sender = sender.strip().lower()
-        receiver = receiver.strip().lower()
-
-        if not sender or not receiver:
-            continue
-
-        if sender == receiver:
-            continue
-
-        if G.has_edge(sender, receiver):
-
-            G[sender][receiver]["weight"] += 1
-
-        else:
-
-            G.add_edge(
-                sender,
-                receiver,
-                weight=1
-            )
-
-    return G
-
-
-# ==========================================================
-# FIND NEAREST VASP USING BFS
-# ==========================================================
-
-def find_nearest_vasp(
-    graph,
-    start_address,
-    vasp_addresses
-):
-    """
-    Find the nearest known VASP from a wallet using BFS.
-
-    BFS is performed on an undirected projection because
-    we are measuring wallet-to-wallet structural proximity.
-
-    Returns:
-        address
-        vasp_name
-        hops
-        path
-    """
-
-    start_address = start_address.strip().lower()
-
-    if not vasp_addresses:
-
-        return {
-            "address": None,
-            "vasp_name": None,
-            "hops": -1,
-            "path": []
-        }
-
-    # Normalize VASP addresses
-    normalized_vasps = {
-        address.strip().lower(): name
-        for address, name in vasp_addresses.items()
-    }
-
-    # Direct VASP match
-    if start_address in normalized_vasps:
-
-        return {
-            "address": start_address,
-            "vasp_name": normalized_vasps[start_address],
-            "hops": 0,
-            "path": [start_address]
-        }
-
-    # Use undirected graph for structural proximity
-    undirected_graph = graph.to_undirected()
-
-    if start_address not in undirected_graph:
-
-        return {
-            "address": None,
-            "vasp_name": None,
-            "hops": -1,
-            "path": []
-        }
-
-    # BFS from suspect wallet
-    queue = [start_address]
-
-    visited = {
-        start_address
-    }
-
-    parent = {
-        start_address: None
-    }
-
-    while queue:
-
-        current = queue.pop(0)
-
-        # Check whether current wallet is known VASP
-        if current in normalized_vasps:
-
-            path = []
-
-            node = current
-
-            while node is not None:
-
-                path.append(node)
-
-                node = parent[node]
-
-            path.reverse()
-
-            return {
-                "address": current,
-                "vasp_name": normalized_vasps[current],
-                "hops": len(path) - 1,
-                "path": path
-            }
-
-        for neighbor in undirected_graph.neighbors(current):
-
-            if neighbor in visited:
-                continue
-
-            visited.add(neighbor)
-
-            parent[neighbor] = current
-
-            queue.append(neighbor)
-
-    # No VASP reachable
-    return {
-        "address": None,
-        "vasp_name": None,
-        "hops": -1,
-        "path": []
-    }
-
-
-# ==========================================================
-# CONFIDENCE SCORE
-# ==========================================================
-
-def calculate_confidence(
-    nearest_vasp,
-    is_direct_vasp=False
-):
-    """
-    Calculate a heuristic confidence score.
-
-    IMPORTANT:
-    This is graph-based analytical confidence.
-    It does NOT prove ownership or VASP control.
-    """
-
-    if is_direct_vasp:
-
-        return 90
-
-    hops = nearest_vasp.get(
-        "hops",
-        -1
-    )
-
-    if hops == 1:
-
-        return 80
-
-    if hops == 2:
-
-        return 70
-
-    if hops == 3:
-
-        return 60
-
-    if hops > 3:
-
-        return 50
-
-    return 0
-
-
-# ==========================================================
-# WALLET EVIDENCE / CONFIDENCE
-# ==========================================================
-
-def calculate_wallet_scores(
-    graph,
-    vasp_addresses
-):
-    """
-    Calculate graph-based nearest-VASP evidence
-    for every wallet in the graph.
-    """
-
-    wallet_scores = []
-
-    for wallet in graph.nodes():
-
-        nearest_vasp = find_nearest_vasp(
-            graph,
-            wallet,
-            vasp_addresses
-        )
-
-        is_direct_vasp = wallet in {
-            address.strip().lower()
-            for address in vasp_addresses
-        }
-
-        confidence = calculate_confidence(
-            nearest_vasp,
-            is_direct_vasp
-        )
-
-        wallet_scores.append({
-
-            "address": wallet,
-
-            "nearest_vasp":
-                nearest_vasp["address"],
-
-            "vasp_name":
-                nearest_vasp["vasp_name"],
-
-            "hops":
-                nearest_vasp["hops"],
-
-            "path":
-                nearest_vasp["path"],
-
-            "confidence":
-                confidence
-        })
-
-    return wallet_scores
-
-
-# ==========================================================
+# ============================================================
 # LOAD TRANSACTIONS FROM CSV
-# ==========================================================
+# ============================================================
 
 def load_transactions(file_path):
-    """
-    Load transactions from CSV.
-
-    CSV format:
-
-    from,to
-    """
-
-    import csv
 
     transactions = []
 
@@ -284,12 +17,23 @@ def load_transactions(file_path):
         encoding="utf-8"
     ) as file:
 
-        reader = csv.DictReader(file)
+        reader = csv.DictReader(
+            file
+        )
 
         for row in reader:
 
-            sender = row["from"].strip().lower()
-            receiver = row["to"].strip().lower()
+            sender = (
+                row["from"]
+                .strip()
+                .lower()
+            )
+
+            receiver = (
+                row["to"]
+                .strip()
+                .lower()
+            )
 
             if (
                 sender
@@ -298,15 +42,337 @@ def load_transactions(file_path):
             ):
 
                 transactions.append(
-                    (sender, receiver)
+                    (
+                        sender,
+                        receiver
+                    )
                 )
 
     return transactions
 
 
-# ==========================================================
-# MAIN GRAPH ANALYSIS
-# ==========================================================
+# ============================================================
+# BUILD DIRECTED WEIGHTED GRAPH
+# ============================================================
+
+def build_transaction_graph(
+    transactions
+):
+
+    G = nx.DiGraph()
+
+    for sender, receiver in transactions:
+
+        if G.has_edge(
+            sender,
+            receiver
+        ):
+
+            G[sender][receiver]["weight"] += 1
+
+        else:
+
+            G.add_edge(
+
+                sender,
+
+                receiver,
+
+                weight=1
+            )
+
+    return G
+
+
+# ============================================================
+# FIND NEAREST VASP
+#
+# Uses DIRECTED BFS.
+#
+# This means:
+#
+# Wallet A
+#    ↓
+# Wallet B
+#    ↓
+# VASP
+#
+# is a valid 2-hop path.
+# ============================================================
+
+def find_nearest_vasp(
+    graph,
+    start_address,
+    vasp_addresses
+):
+
+    start_address = (
+        start_address
+        .strip()
+        .lower()
+    )
+
+    # Normalize VASP addresses
+    normalized_vasps = {
+        address.strip().lower(): name
+        for address, name in vasp_addresses.items()
+    }
+
+    # --------------------------------------------------------
+    # DIRECT VASP MATCH
+    # --------------------------------------------------------
+
+    if start_address in normalized_vasps:
+
+        return {
+            "address": start_address,
+            "vasp_name": normalized_vasps[start_address],
+            "hops": 0,
+            "path": [start_address]
+        }
+
+    # --------------------------------------------------------
+    # WALLET NOT IN GRAPH
+    # --------------------------------------------------------
+
+    if start_address not in graph:
+
+        return {
+            "address": None,
+            "vasp_name": None,
+            "hops": -1,
+            "path": []
+        }
+
+    # --------------------------------------------------------
+    # UNDIRECTED GRAPH FOR VASP PROXIMITY
+    #
+    # This treats a transaction relationship as
+    # a wallet-to-wallet connection regardless of
+    # transaction direction.
+    # --------------------------------------------------------
+
+    G_bfs = graph.to_undirected()
+
+    # --------------------------------------------------------
+    # BFS
+    # --------------------------------------------------------
+
+    queue = [
+        (
+            start_address,
+            0,
+            [start_address]
+        )
+    ]
+
+    visited = {
+        start_address
+    }
+
+    while queue:
+
+        current, hops, path = queue.pop(0)
+
+        for neighbor in G_bfs.neighbors(current):
+
+            if neighbor in visited:
+                continue
+
+            new_path = path + [neighbor]
+
+            # ------------------------------------------------
+            # VASP FOUND
+            # ------------------------------------------------
+
+            if neighbor in normalized_vasps:
+
+                return {
+                    "address": neighbor,
+                    "vasp_name": normalized_vasps[neighbor],
+                    "hops": hops + 1,
+                    "path": new_path
+                }
+
+            visited.add(neighbor)
+
+            queue.append(
+                (
+                    neighbor,
+                    hops + 1,
+                    new_path
+                )
+            )
+
+    # --------------------------------------------------------
+    # NO VASP FOUND
+    # --------------------------------------------------------
+
+    return {
+        "address": None,
+        "vasp_name": None,
+        "hops": -1,
+        "path": []
+    }
+
+
+# ============================================================
+# CONFIDENCE SCORE
+# ============================================================
+
+def calculate_confidence(
+    nearest_vasp,
+    is_direct_vasp=False
+):
+
+    # --------------------------------------------------------
+    # DIRECT VASP
+    # --------------------------------------------------------
+
+    if is_direct_vasp:
+
+        return 90
+
+    # --------------------------------------------------------
+    # NO VASP
+    # --------------------------------------------------------
+
+    if nearest_vasp is None:
+
+        return 0
+
+    hops = nearest_vasp.get(
+        "hops",
+        -1
+    )
+
+    # --------------------------------------------------------
+    # HOP-BASED SCORE
+    # --------------------------------------------------------
+
+    if hops == 1:
+
+        return 80
+
+    elif hops == 2:
+
+        return 70
+
+    elif hops == 3:
+
+        return 60
+
+    elif hops > 3:
+
+        return 50
+
+    return 0
+
+
+# ============================================================
+# CALCULATE WALLET SCORES
+# ============================================================
+
+def calculate_wallet_scores(
+    graph,
+    vasp_addresses
+):
+
+    wallet_scores = {}
+
+    # Normalize once instead of
+    # rebuilding the set for every wallet
+    normalized_vasp_addresses = {
+
+        address.strip().lower()
+
+        for address
+        in vasp_addresses.keys()
+    }
+
+    for wallet in graph.nodes():
+
+        nearest_vasp = find_nearest_vasp(
+
+            graph,
+
+            wallet,
+
+            vasp_addresses
+        )
+
+        is_direct_vasp = (
+
+            wallet.strip().lower()
+
+            in normalized_vasp_addresses
+        )
+
+        confidence = calculate_confidence(
+
+            nearest_vasp,
+
+            is_direct_vasp
+        )
+
+        wallet_scores[wallet] = {
+
+            "confidence":
+                confidence,
+
+            "nearest_vasp":
+
+                (
+                    nearest_vasp.get(
+                        "address"
+                    )
+
+                    if nearest_vasp
+                    else None
+                ),
+
+            "vasp_name":
+
+                (
+                    nearest_vasp.get(
+                        "vasp_name"
+                    )
+
+                    if nearest_vasp
+                    else None
+                ),
+
+            "hops":
+
+                (
+                    nearest_vasp.get(
+                        "hops",
+                        -1
+                    )
+
+                    if nearest_vasp
+                    else -1
+                ),
+
+            "path":
+
+                (
+                    nearest_vasp.get(
+                        "path",
+                        []
+                    )
+
+                    if nearest_vasp
+                    else []
+                )
+        }
+
+    return wallet_scores
+
+
+# ============================================================
+# COMPLETE GRAPH ANALYSIS
+# ============================================================
 
 def analyze_graph(
     transactions,
@@ -324,65 +390,79 @@ def analyze_graph(
 
         vasp_addresses = {}
 
-    # ------------------------------------------------------
-    # 1. BUILD DIRECTED GRAPH
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # BUILD DIRECTED GRAPH
+    # --------------------------------------------------------
 
     G = build_transaction_graph(
         transactions
     )
 
-    # Make sure suspect exists
+    # Ensure suspect exists
     if suspect_address not in G:
 
         G.add_node(
             suspect_address
         )
 
-    # ------------------------------------------------------
-    # 2. GRAPH FEATURES
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # SUSPECT DEGREE
+    # --------------------------------------------------------
 
-    suspect_in_degree = G.in_degree(
-        suspect_address
-    )
-
-    suspect_out_degree = G.out_degree(
-        suspect_address
-    )
-
-    # ------------------------------------------------------
-    # 3. UNDIRECTED GRAPH FOR COMMUNITY DETECTION
-    # ------------------------------------------------------
-
-    G_cluster = G.to_undirected()
-
-    # ------------------------------------------------------
-    # 4. LOUVAIN COMMUNITY DETECTION
-    # ------------------------------------------------------
-
-    if G_cluster.number_of_nodes() > 0:
-
-        communities = (
-            nx.community.louvain_communities(
-                G_cluster,
-                weight="weight",
-                seed=42
-            )
+    suspect_in_degree = (
+        G.in_degree(
+            suspect_address
         )
+    )
 
-    else:
+    suspect_out_degree = (
+        G.out_degree(
+            suspect_address
+        )
+    )
 
-        communities = []
+    # --------------------------------------------------------
+    # UNDIRECTED PROJECTION
+    #
+    # Used only for Louvain clustering.
+    #
+    # Original directed graph G
+    # remains unchanged.
+    # --------------------------------------------------------
 
-    # ------------------------------------------------------
-    # 5. ASSIGN CLUSTER IDS
-    # ------------------------------------------------------
+    G_cluster = (
+        G.to_undirected()
+    )
+
+    # --------------------------------------------------------
+    # LOUVAIN COMMUNITY DETECTION
+    # --------------------------------------------------------
+
+    communities = (
+
+        nx.community.louvain_communities(
+
+            G_cluster,
+
+            weight="weight",
+
+            seed=42
+        )
+    )
+
+    # --------------------------------------------------------
+    # NODE → CLUSTER
+    # --------------------------------------------------------
 
     node_to_cluster = {}
 
-    for cluster_id, community in enumerate(
+    for (
+        cluster_id,
+        community
+    ) in enumerate(
+
         communities,
+
         start=1
     ):
 
@@ -392,9 +472,9 @@ def analyze_graph(
                 cluster_id
             )
 
-    # ------------------------------------------------------
-    # 6. FIND SUSPECT CLUSTER
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # SUSPECT COMMUNITY
+    # --------------------------------------------------------
 
     suspect_cluster = (
         node_to_cluster.get(
@@ -407,28 +487,36 @@ def analyze_graph(
     if suspect_cluster is not None:
 
         suspect_community = set(
+
             communities[
                 suspect_cluster - 1
             ]
         )
 
-    # ------------------------------------------------------
-    # 7. CLUSTER STATISTICS
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # CLUSTER STATISTICS
+    # --------------------------------------------------------
 
     cluster_stats = []
 
-    for cluster_id, community in enumerate(
+    for (
+        cluster_id,
+        community
+    ) in enumerate(
+
         communities,
+
         start=1
     ):
 
-        subgraph = G_cluster.subgraph(
-            community
+        subgraph = (
+            G_cluster.subgraph(
+                community
+            )
         )
 
-        wallet_count = len(
-            community
+        wallet_count = (
+            len(community)
         )
 
         internal_edges = (
@@ -442,7 +530,12 @@ def analyze_graph(
                 1
             )
 
-            for _, _, data
+            for (
+                _,
+                _,
+                data
+            )
+
             in subgraph.edges(
                 data=True
             )
@@ -489,9 +582,9 @@ def analyze_graph(
                 )
         })
 
-    # ------------------------------------------------------
-    # 8. NEAREST VASP FOR SUSPECT
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # NEAREST VASP
+    # --------------------------------------------------------
 
     nearest_vasp = find_nearest_vasp(
 
@@ -502,89 +595,94 @@ def analyze_graph(
         vasp_addresses
     )
 
-    # ------------------------------------------------------
-    # 9. DIRECT VASP CHECK
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # DIRECT VASP CHECK
+    # --------------------------------------------------------
 
     normalized_vasp_addresses = {
 
-        address.strip().lower():
-            name
+        address.strip().lower()
 
-        for address, name
-        in vasp_addresses.items()
+        for address
+        in vasp_addresses.keys()
     }
 
-    direct_vasp = (
-        normalized_vasp_addresses.get(
-            suspect_address
-        )
+    is_direct_vasp = (
+
+        suspect_address
+
+        in normalized_vasp_addresses
     )
 
-    # ------------------------------------------------------
-    # 10. CONFIDENCE
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # CONFIDENCE
+    # --------------------------------------------------------
 
     confidence = calculate_confidence(
 
         nearest_vasp,
 
-        is_direct_vasp=(
-            direct_vasp is not None
-        )
+        is_direct_vasp
     )
 
-    # ------------------------------------------------------
-    # 11. VASP CONNECTIONS INSIDE SUSPECT CLUSTER
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # VASP CONNECTIONS INSIDE
+    # SUSPECT CLUSTER
+    # --------------------------------------------------------
 
     vasp_connections = []
 
-    for wallet in sorted(
-        suspect_community
-    ):
+    for wallet in suspect_community:
 
-        if wallet in normalized_vasp_addresses:
+        normalized_wallet = (
+            wallet
+            .strip()
+            .lower()
+        )
+
+        if (
+            normalized_wallet
+            in normalized_vasp_addresses
+        ):
 
             vasp_connections.append({
 
                 "address":
-                    wallet,
+                    normalized_wallet,
 
                 "vasp_name":
-                    normalized_vasp_addresses[
+                    vasp_addresses.get(
+                        normalized_wallet
+                    )
+                    or vasp_addresses.get(
                         wallet
-                    ]
+                    )
             })
 
-    # ------------------------------------------------------
-    # 12. CONFIDENCE / EVIDENCE FOR EVERY WALLET
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # WALLET SCORES
+    # --------------------------------------------------------
 
-    wallet_scores = calculate_wallet_scores(
+    wallet_scores = (
+        calculate_wallet_scores(
 
-        G,
+            G,
 
-        normalized_vasp_addresses
+            vasp_addresses
+        )
     )
 
-    # ------------------------------------------------------
-    # 13. GRAPH NODES FOR FRONTEND
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # GRAPH NODES
+    # --------------------------------------------------------
 
     graph_nodes = []
 
     for node in G.nodes():
 
-        wallet_score = next(
-
-            (
-                item
-                for item in wallet_scores
-                if item["address"] == node
-            ),
-
-            None
+        score = wallet_scores.get(
+            node,
+            {}
         )
 
         graph_nodes.append({
@@ -593,7 +691,14 @@ def analyze_graph(
                 node,
 
             "label":
-                node[:10] + "...",
+
+                (
+                    node[:10]
+                    + "..."
+
+                    if len(node) > 10
+                    else node
+                ),
 
             "cluster":
                 node_to_cluster.get(
@@ -601,41 +706,39 @@ def analyze_graph(
                 ),
 
             "confidence":
-                (
-                    wallet_score["confidence"]
-                    if wallet_score
-                    else 0
+                score.get(
+                    "confidence",
+                    0
                 ),
 
             "nearest_vasp":
-                (
-                    wallet_score["nearest_vasp"]
-                    if wallet_score
-                    else None
+                score.get(
+                    "nearest_vasp"
                 ),
 
             "vasp_name":
-                (
-                    wallet_score["vasp_name"]
-                    if wallet_score
-                    else None
+                score.get(
+                    "vasp_name"
                 ),
 
             "hops":
-                (
-                    wallet_score["hops"]
-                    if wallet_score
-                    else -1
+                score.get(
+                    "hops",
+                    -1
                 )
         })
 
-    # ------------------------------------------------------
-    # 14. GRAPH EDGES FOR FRONTEND
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # GRAPH EDGES
+    # --------------------------------------------------------
 
     graph_edges = []
 
-    for sender, receiver, data in G.edges(
+    for (
+        sender,
+        receiver,
+        data
+    ) in G.edges(
         data=True
     ):
 
@@ -654,18 +757,20 @@ def analyze_graph(
                 )
         })
 
-    # ------------------------------------------------------
-    # 15. RETURN RESULT
-    # ------------------------------------------------------
+    # --------------------------------------------------------
+    # FINAL RESULT
+    # --------------------------------------------------------
 
     return {
 
+        # Basic graph
         "nodes":
             G.number_of_nodes(),
 
         "edges":
             G.number_of_edges(),
 
+        # Suspect
         "suspect_cluster":
             suspect_cluster,
 
@@ -685,23 +790,16 @@ def analyze_graph(
                 suspect_community
             ),
 
+        # Clusters
         "clusters":
             cluster_stats,
 
+        # VASP
         "nearest_vasp":
             nearest_vasp,
 
         "confidence":
             confidence,
-
-        "wallet_scores":
-            wallet_scores,
-
-        "graph_nodes":
-            graph_nodes,
-
-        "graph_edges":
-            graph_edges,
 
         "vasp_connections":
             vasp_connections,
@@ -709,5 +807,16 @@ def analyze_graph(
         "vasp_connection_count":
             len(
                 vasp_connections
-            )
+            ),
+
+        # Wallet scores
+        "wallet_scores":
+            wallet_scores,
+
+        # Frontend graph
+        "graph_nodes":
+            graph_nodes,
+
+        "graph_edges":
+            graph_edges
     }
