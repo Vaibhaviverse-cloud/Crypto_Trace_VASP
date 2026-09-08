@@ -4,29 +4,24 @@ from graph_analysis import analyze_graph
 
 import csv
 import os
+import re
 import requests
+
 from dotenv import load_dotenv
 
+
+# ============================================================
+# FLASK APP SETUP
+# ============================================================
 
 app = Flask(__name__)
 CORS(app)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# --------------------------------------------------
-# LOAD ENVIRONMENT VARIABLES
-# --------------------------------------------------
-
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+load_dotenv()
 
 ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 
-print("API KEY LOADED:", bool(ETHERSCAN_API_KEY))
-
-
-# --------------------------------------------------
-# FILE PATHS
-# --------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 VASP_FILE = os.path.join(
     BASE_DIR,
@@ -34,93 +29,91 @@ VASP_FILE = os.path.join(
 )
 
 
-# --------------------------------------------------
+# ============================================================
 # LOAD VASP ADDRESSES
-# --------------------------------------------------
+# ============================================================
 
-def load_vasp_addresses():
+def load_vasp_addresses(file_path):
 
     vasp_addresses = {}
 
-    with open(
-        VASP_FILE,
-        "r",
-        newline="",
-        encoding="utf-8"
-    ) as file:
+    try:
 
-        reader = csv.DictReader(file)
+        with open(
+            file_path,
+            "r",
+            newline="",
+            encoding="utf-8"
+        ) as file:
 
-        for row in reader:
+            reader = csv.DictReader(file)
 
-            address = row["address"].strip().lower()
-            vasp_name = row["vasp_name"].strip()
+            for row in reader:
 
-            vasp_addresses[address] = vasp_name
+                address = (
+                    row.get("address", "")
+                    .strip()
+                    .lower()
+                )
+
+                vasp_name = (
+                    row.get("vasp_name", "")
+                    .strip()
+                )
+
+                if address:
+                    vasp_addresses[address] = vasp_name
+
+    except FileNotFoundError:
+
+        print(
+            f"ERROR: VASP file not found: "
+            f"{file_path}"
+        )
 
     return vasp_addresses
 
 
-VASP_ADDRESSES = load_vasp_addresses()
+VASP_ADDRESSES = load_vasp_addresses(
+    VASP_FILE
+)
 
 print(
     f"Loaded {len(VASP_ADDRESSES)} VASP addresses"
 )
 
 
-# --------------------------------------------------
+# ============================================================
 # ETHEREUM ADDRESS VALIDATION
-# --------------------------------------------------
+# ============================================================
 
-def is_valid_ethereum_address(address):
+def is_valid_eth_address(address):
 
-    if not address.startswith("0x"):
-        return False
+    pattern = r"^0x[a-fA-F0-9]{40}$"
 
-    if len(address) != 42:
-        return False
-
-    hex_part = address[2:]
-
-    try:
-
-        int(hex_part, 16)
-        return True
-
-    except ValueError:
-
-        return False
+    return bool(
+        re.fullmatch(
+            pattern,
+            address
+        )
+    )
 
 
-# --------------------------------------------------
-# FETCH TRANSACTIONS FROM ETHERSCAN API
-# --------------------------------------------------
+# ============================================================
+# FETCH TRANSACTIONS FOR ONE WALLET
+# ============================================================
 
 def fetch_transactions(address):
 
     if not ETHERSCAN_API_KEY:
 
-        print("----------------------------------------")
-        print("ETHERSCAN ERROR")
-        print("ETHERSCAN_API_KEY not found in .env")
-        print("----------------------------------------")
-
-        return [], "API key not found"
-
-    if not is_valid_ethereum_address(address):
-
-        print("----------------------------------------")
-        print("ETHERSCAN ERROR")
-        print(
-            "Invalid Ethereum address:",
-            address
+        raise RuntimeError(
+            "ETHERSCAN_API_KEY is not configured"
         )
-        print("----------------------------------------")
 
-        return [], "Invalid Ethereum address"
-
-    # Etherscan V2 API
-    url = "https://api.etherscan.io/v2/api"
+    url = (
+        "https://api.etherscan.io/v2/api"
+    )
 
     params = {
 
@@ -145,148 +138,230 @@ def fetch_transactions(address):
         "apikey": ETHERSCAN_API_KEY
     }
 
-    print("----------------------------------------")
-    print("REQUESTING TRANSACTIONS FROM ETHERSCAN")
-    print("Address:", address)
-    print("----------------------------------------")
+    response = requests.get(
+        url,
+        params=params,
+        timeout=20
+    )
 
-    try:
+    response.raise_for_status()
 
-        response = requests.get(
-            url,
-            params=params,
-            timeout=15
+    data = response.json()
+
+    if data.get("status") != "1":
+
+        message = data.get(
+            "message",
+            "Etherscan API error"
+        )
+
+        result = data.get(
+            "result"
+        )
+
+        if isinstance(
+            result,
+            str
+        ):
+
+            message = result
+
+        raise RuntimeError(
+            message
+        )
+
+    transactions = []
+
+    for tx in data.get(
+        "result",
+        []
+    ):
+
+        sender = (
+            tx.get("from", "")
+            .strip()
+            .lower()
+        )
+
+        receiver = (
+            tx.get("to", "")
+            .strip()
+            .lower()
+        )
+
+        if (
+            sender
+            and receiver
+            and sender != receiver
+        ):
+
+            transactions.append(
+                (
+                    sender,
+                    receiver
+                )
+            )
+
+    return transactions
+
+
+# ============================================================
+# BOUNDED 2-HOP TRANSACTION FETCHING
+# ============================================================
+
+def fetch_transactions_multi_hop(
+    start_address,
+    max_depth=2,
+    max_wallets=10
+):
+
+    start_address = (
+        start_address
+        .strip()
+        .lower()
+    )
+
+    visited = set()
+
+    # queue contains:
+    # (wallet_address, depth)
+    queue = [
+        (
+            start_address,
+            0
+        )
+    ]
+
+    all_transactions = []
+
+    root_tx_count = 0
+
+    while (
+        queue
+        and len(visited) < max_wallets
+    ):
+
+        current_address, depth = (
+            queue.pop(0)
+        )
+
+        if current_address in visited:
+            continue
+
+        visited.add(
+            current_address
         )
 
         print(
-            "HTTP Status:",
-            response.status_code
+            f"[TRACE] Fetching "
+            f"{current_address} "
+            f"(depth={depth})"
         )
 
-        response.raise_for_status()
+        try:
 
-        data = response.json()
+            transactions = fetch_transactions(
+                current_address
+            )
 
-        print(
-            "Etherscan response status:",
-            data.get("status")
+        except Exception as e:
+
+            print(
+                f"[TRACE] Failed to fetch "
+                f"{current_address}: {e}"
+            )
+
+            continue
+
+        # Save transaction count
+        # for original searched wallet
+        if current_address == start_address:
+
+            root_tx_count = len(
+                transactions
+            )
+
+        # Add transactions to
+        # combined graph dataset
+        all_transactions.extend(
+            transactions
         )
 
-        print(
-            "Etherscan message:",
-            data.get("message")
-        )
+        # Stop expansion after
+        # reaching maximum depth
+        if depth >= max_depth:
+            continue
 
-        # --------------------------------------------------
-        # SUCCESS
-        # --------------------------------------------------
+        # ----------------------------------------------------
+        # DISCOVER NEXT-LEVEL WALLETS
+        # ----------------------------------------------------
 
-        if data.get("status") == "1":
+        for sender, receiver in transactions:
 
-            transactions = []
+            next_wallet = None
 
-            for tx in data.get(
-                "result",
-                []
+            # Outgoing transaction
+            if sender == current_address:
+
+                next_wallet = receiver
+
+            # Incoming transaction
+            elif receiver == current_address:
+
+                next_wallet = sender
+
+            if not next_wallet:
+                continue
+
+            if next_wallet in visited:
+                continue
+
+            # Don't fetch known VASP wallets.
+            #
+            # We already know that they are VASPs,
+            # so there is no reason to download
+            # their entire transaction history.
+            if next_wallet in VASP_ADDRESSES:
+
+                print(
+                    f"[TRACE] Found VASP "
+                    f"{next_wallet}"
+                )
+
+                continue
+
+            if not is_valid_eth_address(
+                next_wallet
             ):
 
-                sender = tx.get(
-                    "from",
-                    ""
-                ).strip().lower()
+                continue
 
-                receiver = tx.get(
-                    "to",
-                    ""
-                ).strip().lower()
+            # Avoid unlimited API expansion
+            if (
+                len(visited)
+                + len(queue)
+                >= max_wallets
+            ):
 
-                if (
-                    sender
-                    and receiver
-                    and sender != receiver
-                ):
+                break
 
-                    transactions.append(
-                        (sender, receiver)
-                    )
-
-            if transactions:
-
-                print("----------------------------------------")
-                print(
-                    f"SUCCESS: Received "
-                    f"{len(transactions)} "
-                    "transactions from Etherscan"
+            queue.append(
+                (
+                    next_wallet,
+                    depth + 1
                 )
-                print("----------------------------------------")
-
-                return (
-                    transactions,
-                    "Etherscan transaction data loaded successfully"
-                )
-
-            print("----------------------------------------")
-            print(
-                "Etherscan returned zero "
-                "usable transactions"
-            )
-            print("----------------------------------------")
-
-            return (
-                [],
-                "Etherscan returned zero usable transactions"
             )
 
-        # --------------------------------------------------
-        # API ERROR
-        # --------------------------------------------------
-
-        error_message = data.get(
-            "result",
-            data.get(
-                "message",
-                "Unknown Etherscan error"
-            )
-        )
-
-        print("----------------------------------------")
-        print("ETHERSCAN API ERROR")
-        print(error_message)
-        print("----------------------------------------")
-
-        return (
-            [],
-            str(error_message)
-        )
-
-    except requests.RequestException as error:
-
-        print("----------------------------------------")
-        print("ETHERSCAN REQUEST FAILED")
-        print(error)
-        print("----------------------------------------")
-
-        return (
-            [],
-            str(error)
-        )
-
-    except ValueError as error:
-
-        print("----------------------------------------")
-        print("INVALID JSON FROM ETHERSCAN")
-        print(error)
-        print("----------------------------------------")
-
-        return (
-            [],
-            str(error)
-        )
+    return (
+        all_transactions,
+        visited,
+        root_tx_count
+    )
 
 
-# --------------------------------------------------
-# ATTRIBUTE API
-# --------------------------------------------------
+# ============================================================
+# ATTRIBUTE / TRACE API
+# ============================================================
 
 @app.route(
     "/api/attribute",
@@ -294,207 +369,309 @@ def fetch_transactions(address):
 )
 def attribute():
 
-    # --------------------------------------------------
-    # GET ADDRESS
-    # --------------------------------------------------
+    address = (
+        request.args.get(
+            "address",
+            ""
+        )
+        .strip()
+        .lower()
+    )
 
-    address = request.args.get(
-        "address",
-        ""
-    ).strip().lower()
-
-    if not address:
-
-        return jsonify({
-            "error": "Address is required"
-        }), 400
-
-    # --------------------------------------------------
+    # --------------------------------------------------------
     # VALIDATE ADDRESS
-    # --------------------------------------------------
+    # --------------------------------------------------------
 
-    if not is_valid_ethereum_address(address):
+    if not is_valid_eth_address(
+        address
+    ):
 
         return jsonify({
 
-            "error": "Invalid Ethereum address",
+            "error":
+                "Invalid Ethereum address",
 
             "message": (
-                "Ethereum wallet address must contain "
-                "0x followed by 40 hexadecimal characters."
+                "Ethereum wallet address must "
+                "contain 0x followed by 40 "
+                "hexadecimal characters."
             )
 
         }), 400
 
-    # --------------------------------------------------
-    # FETCH TRANSACTIONS FROM ETHERSCAN
-    # --------------------------------------------------
+    # --------------------------------------------------------
+    # DIRECT VASP
+    #
+    # If searched address itself is a VASP,
+    # don't perform multi-hop fetching.
+    # --------------------------------------------------------
 
-    transactions, data_source_message = fetch_transactions(
-        address
-    )
+    if address in VASP_ADDRESSES:
 
-    # If Etherscan failed
+        try:
+
+            transactions = fetch_transactions(
+                address
+            )
+
+        except Exception as e:
+
+            return jsonify({
+
+                "error":
+                    "Failed to fetch blockchain data",
+
+                "message":
+                    str(e),
+
+                "data_source":
+                    "etherscan"
+
+            }), 502
+
+        fetched_wallets = {
+            address
+        }
+
+        root_tx_count = len(
+            transactions
+        )
+
+    # --------------------------------------------------------
+    # NON-VASP → BOUNDED 2-HOP FETCH
+    # --------------------------------------------------------
+
+    else:
+
+        try:
+
+            (
+                transactions,
+                fetched_wallets,
+                root_tx_count
+
+            ) = fetch_transactions_multi_hop(
+
+                address,
+
+                max_depth=2,
+
+                max_wallets=10
+            )
+
+        except Exception as e:
+
+            return jsonify({
+
+                "error":
+                    "Failed to fetch blockchain data",
+
+                "message":
+                    str(e),
+
+                "data_source":
+                    "etherscan"
+
+            }), 502
+
+    # --------------------------------------------------------
+    # NO TRANSACTIONS
+    # --------------------------------------------------------
+
     if not transactions:
 
         return jsonify({
 
-            "error": "Unable to fetch transaction data",
+            "error":
+                "No transactions found",
 
-            "address": address,
+            "address":
+                address,
 
-            "data_source": "etherscan",
+            "data_source":
+                "etherscan"
 
-            "data_source_message": data_source_message,
+        }), 404
 
-            "transactions": [],
-
-            "graph_analysis": {}
-
-        }), 502
-
-    # --------------------------------------------------
+    # --------------------------------------------------------
     # GRAPH ANALYSIS
-    # --------------------------------------------------
+    # --------------------------------------------------------
 
-    graph_result = analyze_graph(
-        transactions,
-        address
+    try:
+
+        graph_result = analyze_graph(
+
+            transactions,
+
+            address,
+
+            VASP_ADDRESSES
+        )
+
+    except Exception as e:
+
+        return jsonify({
+
+            "error":
+                "Graph analysis failed",
+
+            "message":
+                str(e)
+
+        }), 500
+
+    # --------------------------------------------------------
+    # VASP RESULT
+    # --------------------------------------------------------
+
+    nearest_vasp = graph_result.get(
+        "nearest_vasp"
     )
 
-    # --------------------------------------------------
-    # SUSPECT TRANSACTIONS
-    # --------------------------------------------------
+    matched_vasp = None
 
-    suspect_transactions = []
+    matched_via = None
 
-    for sender, receiver in transactions:
+    hops = -1
 
-        if (
-            sender == address
-            or receiver == address
-        ):
+    confidence = 0
 
-            suspect_transactions.append({
+    if nearest_vasp:
 
-                "from": sender,
+        matched_vasp = (
+            nearest_vasp.get(
+                "vasp_name"
+            )
+        )
 
-                "to": receiver
+        matched_via = (
+            nearest_vasp.get(
+                "address"
+            )
+        )
 
-            })
+        hops = (
+            nearest_vasp.get(
+                "hops",
+                -1
+            )
+        )
 
-    # --------------------------------------------------
-    # VASP CONNECTIONS
-    # --------------------------------------------------
+        confidence = (
+            graph_result.get(
+                "confidence",
+                0
+            )
+        )
 
-    vasp_connections = []
+    # --------------------------------------------------------
+    # DIRECT VASP OVERRIDE
+    # --------------------------------------------------------
 
-    for wallet in graph_result[
-        "cluster_members"
-    ]:
+    if address in VASP_ADDRESSES:
 
-        if wallet in VASP_ADDRESSES:
+        matched_vasp = (
+            VASP_ADDRESSES[address]
+        )
 
-            vasp_connections.append({
-
-                "address": wallet,
-
-                "vasp_name": VASP_ADDRESSES[
-                    wallet
-                ]
-
-            })
-
-    # --------------------------------------------------
-    # DIRECT VASP MATCH
-    # --------------------------------------------------
-
-    direct_vasp = VASP_ADDRESSES.get(
-        address
-    )
-
-    if direct_vasp:
-
-        matched_vasp = direct_vasp
-
-        confidence = 90
+        matched_via = address
 
         hops = 0
 
-        matched_via = None
+        confidence = 90
 
-    else:
+    # --------------------------------------------------------
+    # REPEATED TRANSACTION FLAGS
+    # --------------------------------------------------------
 
-        matched_vasp = None
-
-        confidence = 0
-
-        hops = -1
-
-        matched_via = None
-
-    # --------------------------------------------------
-    # REPEATED TRANSACTION DETECTION
-    # --------------------------------------------------
-
-    flags = []
-
-    transaction_counts = {}
+    outgoing_counts = {}
 
     for sender, receiver in transactions:
 
-        if sender == address:
+        # Only analyse transactions
+        # originating from searched wallet
+        if sender != address:
+            continue
 
-            key = (
-                sender,
-                receiver
-            )
+        key = (
+            sender,
+            receiver
+        )
 
-            transaction_counts[key] = (
-                transaction_counts.get(
-                    key,
-                    0
-                ) + 1
+        outgoing_counts[key] = (
+            outgoing_counts.get(
+                key,
+                0
             )
+            + 1
+        )
+
+    flags = []
 
     for (
-        sender,
-        receiver
-    ), count in transaction_counts.items():
+        (sender, receiver),
+        count
+    ) in outgoing_counts.items():
 
         if count >= 3:
 
             flags.append({
 
-                "type": "repeated_transaction",
+                "type":
+                    "repeated_transaction",
 
-                "from": sender,
+                "from":
+                    sender,
 
-                "to": receiver,
+                "to":
+                    receiver,
 
-                "count": count
-
+                "count":
+                    count
             })
 
-    # --------------------------------------------------
+    # --------------------------------------------------------
     # FINAL RESPONSE
-    # --------------------------------------------------
+    # --------------------------------------------------------
 
-    result = {
+    return jsonify({
 
-        "address": address,
+        "address":
+            address,
 
-        "data_source": "etherscan",
+        "data_source":
+            "etherscan",
 
-        "data_source_message":
-            data_source_message,
+        "data_source_message": (
+            "Transactions fetched from "
+            "Etherscan using bounded "
+            "2-hop graph expansion."
+        ),
 
+        # Transactions belonging to
+        # searched wallet
         "tx_count":
-            len(suspect_transactions),
+            root_tx_count,
 
+        # Total transactions used
+        # for graph construction
+        "graph_tx_count":
+            len(transactions),
+
+        # Number of wallets whose
+        # transactions were fetched
+        "fetched_wallet_count":
+            len(fetched_wallets),
+
+        # Maximum configured trace depth
+        "trace_depth":
+            2,
+
+        # Sample transactions for frontend
         "transactions":
-            suspect_transactions,
+            transactions[:10],
 
+        # VASP attribution
         "matched_vasp":
             matched_vasp,
 
@@ -507,71 +684,19 @@ def attribute():
         "matched_via":
             matched_via,
 
+        # Flags
         "flags":
             flags,
 
-        "graph_analysis": {
-
-            "nodes":
-                graph_result["nodes"],
-
-            "edges":
-                graph_result["edges"],
-
-            "suspect_cluster":
-                graph_result[
-                    "suspect_cluster"
-                ],
-
-            "cluster_size":
-                graph_result[
-                    "cluster_size"
-                ],
-
-            "suspect_in_degree":
-                graph_result[
-                    "suspect_in_degree"
-                ],
-
-            "suspect_out_degree":
-                graph_result[
-                    "suspect_out_degree"
-                ],
-
-            "cluster_members":
-                graph_result[
-                    "cluster_members"
-                ],
-
-            "clusters":
-                graph_result[
-                    "clusters"
-                ],
-
-            "graph_nodes":
-                graph_result[
-                    "graph_nodes"
-                ],
-
-            "graph_edges":
-                graph_result[
-                    "graph_edges"
-                ],
-
-            "vasp_connections":
-                vasp_connections,
-
-            "vasp_connection_count":
-                len(vasp_connections)
-        }
-    }
-
-    return jsonify(result)
+        # Complete graph analysis
+        "graph_analysis":
+            graph_result
+    })
 
 
-# --------------------------------------------------
-# HEALTH CHECK API
-# --------------------------------------------------
+# ============================================================
+# HEALTH CHECK
+# ============================================================
 
 @app.route(
     "/api/health",
@@ -581,20 +706,17 @@ def health():
 
     return jsonify({
 
-        "status": "ok",
+        "status":
+            "ok",
 
-        "etherscan_configured":
-            bool(ETHERSCAN_API_KEY),
-
-        "vasp_addresses":
-            len(VASP_ADDRESSES)
-
+        "service":
+            "Crypto Trace VASP API"
     })
 
 
-# --------------------------------------------------
+# ============================================================
 # RUN SERVER
-# --------------------------------------------------
+# ============================================================
 
 if __name__ == "__main__":
 
